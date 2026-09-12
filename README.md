@@ -25,7 +25,7 @@ any machine and it behaves identically.
 
 ## What's in it
 
-Ten sections, reachable from the sidebar:
+Eleven sections, reachable from the sidebar:
 
 | Section | What it covers |
 |---|---|
@@ -38,12 +38,18 @@ Ten sections, reachable from the sidebar:
 | Unused Tables | Tables replicated but never referenced by BI |
 | Top Insights | The 50 largest tables, storage against BI usage |
 | Insertion Trends | Approximate daily insert/update volume, per table and per database |
+| Daily Growth (Estimated) | Estimated data written per day per table — cells written, and what it costs in storage per day, month and year |
 
-Every section supports per-column filtering, click-to-sort on any column, a section-wide
-search, a database filter, and a TOTAL row summing each numeric column across all filtered
-rows. Column headings match the workbook exactly. **⤓ Export Excel** and **⤓ Export HTML**
-save exactly what's currently filtered and sorted, totals included — the HTML export embeds
-the charts as images so it stands alone.
+Every section supports Excel-style per-column dropdown filters, click-to-sort on any column,
+a section-wide search, a database filter, frozen leading columns, and a TOTAL row summing
+each numeric column across all filtered rows. Column headings match the workbook exactly.
+**⤓ Export Excel** and **⤓ Export HTML** save exactly what's currently filtered and sorted,
+totals included — the HTML export embeds the charts as images so it stands alone.
+
+The Daily Growth figures are **derived, not measured**: each table's average row size comes
+from its own catalogue entry (`Data Size (MB) ÷ Row Count`) multiplied by its approximate
+rows written per day. It covers only the sampled tables, so treat it as a lower bound. The
+method is spelled out in the Methodology panel on that page.
 
 ## Repository layout
 

@@ -11,11 +11,14 @@ every single open.
 ## Using it
 
 - Pick a section in the left sidebar: **Overview & Databases** (the landing page — summary
-  KPIs and charts on top, the per-database table underneath), Tables, Columns, Stored
-  Procedures, SP → Table Lineage, View Lineage, Unused Tables, Top Insights, and the two
-  Insertion Trend views.
-- Every table has a **filter box under each column heading**, click-to-sort on every heading,
-  a section-wide search box, and a database filter. **Clear filters** resets them all.
+  KPIs grouped by theme and charts on top, the per-database table underneath), Tables,
+  Columns, Stored Procedures, SP → Table Lineage, View Lineage, Unused Tables, Top Insights,
+  the two Insertion Trend views, and **Daily Growth (Estimated)**.
+- Every column heading has an **Excel-style dropdown filter**: tick the values you want, or
+  type in "Text contains". Each entry shows how many rows carry that value. Headings also
+  sort on click, and there's a section-wide search plus a database filter. **Clear filters**
+  lights up whenever any filter is active and resets everything.
+- The first columns (database and name/count) stay **frozen** while you scroll sideways.
 - Each table ends with a **TOTAL row** summing every numeric column across all filtered
   rows — not just the page you're looking at.
 - Column headings are exactly as they appear in the workbook, so they line up with the
