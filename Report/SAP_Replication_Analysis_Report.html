@@ -5,22 +5,24 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>SAP Replication Analytics</title>
 <style>
+/* Neutral graphite palette: a soft warm-grey page in light mode (no glare, no blue cast)
+   and a true charcoal in dark mode, so the gradient tiles carry the colour instead. */
 :root{
-  --bg:#eef1f8; --panel:#ffffff; --panel2:#f6f8fd; --ink:#0f172a; --ink2:#64748b; --line:#e2e7f0;
-  --accent:#4f46e5; --accent-ink:#ffffff;
-  --good:#15803d; --good-bg:#e7f8ee; --bad:#b91c1c; --bad-bg:#fdecec; --warn:#b45309; --warn-bg:#fdf3e3;
-  --muted:#64748b; --muted-bg:#eceff6;
-  --shadow:0 1px 2px rgba(15,23,42,.05),0 2px 8px rgba(15,23,42,.06);
-  --shadow-lg:0 4px 16px rgba(15,23,42,.10),0 1px 3px rgba(15,23,42,.06);
-  --tot-a:#eef2ff; --tot-b:#e0f2fe; --tot-ink:#3730a3;
+  --bg:#eceded; --panel:#ffffff; --panel2:#f5f5f6; --ink:#22252a; --ink2:#6d737b; --line:#e0e1e4;
+  --accent:#5a5fd4; --accent-ink:#ffffff;
+  --good:#15803d; --good-bg:#e9f6ee; --bad:#b3261e; --bad-bg:#fbeceb; --warn:#9a5b06; --warn-bg:#fbf1e3;
+  --muted:#6d737b; --muted-bg:#eeeff1;
+  --shadow:0 1px 2px rgba(20,22,26,.05),0 2px 7px rgba(20,22,26,.05);
+  --shadow-lg:0 5px 18px rgba(20,22,26,.11),0 1px 3px rgba(20,22,26,.06);
+  --tot-a:#f0f0fa; --tot-b:#eaf4f2; --tot-ink:#3f3f96;
 }
 html[data-theme="dark"]{
-  --bg:#0b1020; --panel:#141b2d; --panel2:#1a2235; --ink:#e8ecf6; --ink2:#94a3b8; --line:#27314a;
-  --accent:#6366f1; --accent-ink:#ffffff;
-  --good:#4ade80; --good-bg:#123322; --bad:#f87171; --bad-bg:#3a1418; --warn:#fbbf24; --warn-bg:#3a2a0f;
-  --muted:#94a3b8; --muted-bg:#212a3d;
-  --shadow:0 1px 2px rgba(0,0,0,.4); --shadow-lg:0 6px 20px rgba(0,0,0,.5);
-  --tot-a:#1e1b4b; --tot-b:#0c2b3f; --tot-ink:#c7d2fe;
+  --bg:#161719; --panel:#1e2023; --panel2:#26282c; --ink:#e8e9eb; --ink2:#9aa0a7; --line:#33363b;
+  --accent:#8286f0; --accent-ink:#ffffff;
+  --good:#5fd08a; --good-bg:#16301f; --bad:#f08a84; --bad-bg:#341a19; --warn:#e0a64a; --warn-bg:#332612;
+  --muted:#9aa0a7; --muted-bg:#2b2e33;
+  --shadow:0 1px 2px rgba(0,0,0,.45); --shadow-lg:0 6px 20px rgba(0,0,0,.55);
+  --tot-a:#2a2b3a; --tot-b:#242e2e; --tot-ink:#c3c5f5;
 }
 *{box-sizing:border-box}
 body{margin:0;background:var(--bg);color:var(--ink);font:13px/1.4 -apple-system,Segoe UI,Roboto,Arial,sans-serif}
@@ -29,13 +31,13 @@ button{font-family:inherit}
 .app{display:flex;min-height:100vh}
 
 .sidebar{width:222px;flex:0 0 222px;background:var(--panel);border-right:1px solid var(--line);display:flex;flex-direction:column;position:sticky;top:0;height:100vh}
-.brand{padding:15px;border-bottom:1px solid var(--line);background:linear-gradient(135deg,rgba(79,70,229,.10),rgba(14,165,233,.06))}
+.brand{padding:15px;border-bottom:1px solid var(--line);background:linear-gradient(135deg,rgba(90,95,212,.12),rgba(90,95,212,.03))}
 .brand-title{font-size:14.5px;font-weight:800}
 .brand-sub{font-size:11px;color:var(--ink2);margin-top:2px}
 .nav{flex:1;overflow-y:auto;padding:8px}
 .nav-item{display:flex;align-items:center;gap:8px;padding:8px 10px;border-radius:8px;cursor:pointer;color:var(--ink2);font-weight:600;font-size:12.2px;margin-bottom:1px;user-select:none;transition:.15s}
 .nav-item:hover{background:var(--panel2);color:var(--ink)}
-.nav-item.active{background:linear-gradient(135deg,#4f46e5,#6366f1);color:#fff;box-shadow:var(--shadow)}
+.nav-item.active{background:linear-gradient(135deg,#5a5fd4,#7b6fe0);color:#fff;box-shadow:var(--shadow)}
 .nav-icon{width:17px;text-align:center}
 
 .main{flex:1;min-width:0;display:flex;flex-direction:column}
@@ -45,14 +47,31 @@ button{font-family:inherit}
 .topbar-controls{display:flex;gap:7px;flex-wrap:wrap;align-items:center}
 .btn{border:1px solid var(--line);background:var(--panel);color:var(--ink);border-radius:7px;padding:7px 11px;font-size:12.2px;font-weight:600;cursor:pointer;white-space:nowrap;transition:.15s}
 .btn:hover{border-color:var(--accent)}
-.btn.primary{background:linear-gradient(135deg,#4f46e5,#6366f1);border-color:transparent;color:#fff;box-shadow:var(--shadow)}
-.btn.alert{background:linear-gradient(135deg,#f59e0b,#f97316);border-color:transparent;color:#fff;box-shadow:0 0 0 3px rgba(245,158,11,.22)}
+.btn.primary{background:linear-gradient(135deg,#5a5fd4,#7b6fe0);border-color:transparent;color:#fff;box-shadow:var(--shadow)}
+.btn.alert{background:linear-gradient(135deg,#d98324,#e0663c);border-color:transparent;color:#fff;box-shadow:0 0 0 3px rgba(217,131,36,.24)}
 .btn:disabled{opacity:.5;cursor:not-allowed}
 .workspace{padding:13px 18px 24px;display:flex;flex-direction:column;gap:11px;flex:1}
 
 .block-title{font-size:13.5px;font-weight:700;display:flex;align-items:center;gap:8px}
-.block-title:before{content:"";width:4px;height:15px;border-radius:2px;background:linear-gradient(180deg,#4f46e5,#0ea5e9)}
+.block-title:before{content:"";width:4px;height:15px;border-radius:2px;background:linear-gradient(180deg,#5a5fd4,#3f9f9a)}
 .groupbar{display:inline-flex;align-items:center;gap:7px;padding:5px 12px;border-radius:999px;font-size:10.8px;font-weight:800;letter-spacing:.5px;text-transform:uppercase;color:#fff;box-shadow:var(--shadow)}
+
+/* Overview subject tiles */
+.tiles{display:grid;grid-template-columns:repeat(auto-fit,minmax(272px,1fr));gap:12px}
+.tile{background:var(--panel);border:1px solid var(--line);border-radius:14px;overflow:hidden;box-shadow:var(--shadow);transition:.18s}
+.tile:hover{transform:translateY(-3px);box-shadow:var(--shadow-lg)}
+.tile-head{padding:11px 14px;color:#fff;display:flex;align-items:center;gap:9px;font-weight:800;font-size:12.7px;letter-spacing:.25px;position:relative}
+.tile-head:after{content:"";position:absolute;inset:0;background:linear-gradient(180deg,rgba(255,255,255,.20),rgba(255,255,255,0) 62%);pointer-events:none}
+.tile-head .ticon{font-size:15px;filter:drop-shadow(0 1px 1px rgba(0,0,0,.28))}
+.tile-body{padding:7px 14px 11px}
+.trow{display:flex;align-items:baseline;justify-content:space-between;gap:10px;padding:6.5px 0;border-bottom:1px dashed var(--line)}
+.trow:last-child{border-bottom:none}
+.trow .tl{font-size:11.7px;color:var(--ink2);font-weight:600}
+.trow .tv{font-size:14px;font-weight:800;font-variant-numeric:tabular-nums;white-space:nowrap}
+.trow.hero{padding:9px 0 8px}
+.trow.hero .tl{font-size:11.2px;text-transform:uppercase;letter-spacing:.4px}
+.trow.hero .tv{font-size:21px;background:var(--tile-grad);-webkit-background-clip:text;background-clip:text;color:transparent}
+.trow .tv .sub{font-size:11px;font-weight:700;color:var(--ink2);margin-left:5px}
 .kpis{display:grid;grid-template-columns:repeat(auto-fit,minmax(152px,1fr));gap:9px}
 .kpi{background:var(--panel);border:1px solid var(--line);border-radius:11px;padding:10px 12px;box-shadow:var(--shadow);position:relative;overflow:hidden;transition:.18s}
 .kpi:hover{transform:translateY(-2px);box-shadow:var(--shadow-lg)}
@@ -562,13 +581,16 @@ const SHEET_CONFIGS = {
 
 function tableSectionOf(navId){ return navId==="overview" ? "databases" : navId; }
 
-/* Overview KPI grouping, each with its own gradient identity. */
-const OVERVIEW_GROUPS = [
-  {title:"Replication Scale", grad:"linear-gradient(135deg,#4f46e5,#7c3aed)", match:["Total DBs","Total Tables","Total Columns","Total Rows"]},
-  {title:"Storage",           grad:"linear-gradient(135deg,#0ea5e9,#06b6d4)", match:["Total Replicated Storage","Total Data Size","Total Index Size","BI Used Storage","Top-91"]},
-  {title:"BI Usage",          grad:"linear-gradient(135deg,#16a34a,#65a30d)", match:["BI-Used Tables","BI-Used Columns","Total used Rows","BI Used Tables"]},
-  {title:"Stored Procedures", grad:"linear-gradient(135deg,#f59e0b,#f97316)", match:["Total Stored Procedures","SAP-Linked","SAP-Non-Linked"]}
-];
+/* Overview is grouped into subject tiles rather than one flat run of metrics. */
+const TILE_GRADS = {
+  db:      "linear-gradient(135deg,#4f46e5,#7c5cd6)",
+  tables:  "linear-gradient(135deg,#7c3aed,#b14bc9)",
+  columns: "linear-gradient(135deg,#0e7490,#12a4b4)",
+  storage: "linear-gradient(135deg,#0f766e,#3fa08a)",
+  rows:    "linear-gradient(135deg,#3f7d3a,#7aa332)",
+  sps:     "linear-gradient(135deg,#b45309,#e08a2e)",
+  growth:  "linear-gradient(135deg,#a1265c,#d4517e)"
+};
 
 const STATE = {
   loaded:false, fileName:"", generated:"", loadedAt:null,
@@ -839,7 +861,7 @@ function getFilteredSortedRows(id){
 }
 
 /* ------------------------------ charts ------------------------------ */
-const PALETTE=["#4f46e5","#0ea5e9","#16a34a","#f59e0b","#dc2626","#9333ea","#0891b2","#65a30d","#db2777","#475569"];
+const PALETTE=["#5a5fd4","#2a93a8","#3f8f5a","#c98a2b","#c1544c","#8b5cc4","#3f7d8c","#7d9440","#b45f86","#6b7078"];
 function shade(hex,pct){
   const n=parseInt(hex.slice(1),16);
   let r=(n>>16)&255,g=(n>>8)&255,b=n&255;
@@ -993,30 +1015,91 @@ function navigate(navId){
   renderSectionShell(tblId);
 }
 
+/* Each tile answers one subject: databases, tables, columns, storage, rows, procedures,
+   growth. Figures are computed from the detail sheets so they stay consistent with the
+   tables below; the summary sheet supplies the few values it alone carries. */
+function buildOverviewTiles(){
+  const ov=STATE.overview||{};
+  const all=[...(ov.kpiA||[]),...(ov.kpiB||[])];
+  const kv=s=>{ const f=all.find(k=>String(k.label).indexOf(s)>-1); return f?f.value:null; };
+  const pick=(arr,s)=>{ const f=(arr||[]).find(x=>String(x.label).toLowerCase().indexOf(s)>-1); return f?f.value:null; };
+  const rowsOf=id=>(STATE.data[id]&&STATE.data[id].rows)?STATE.data[id].rows:[];
+  const db=rowsOf("databases"), un=rowsOf("unused"), sp=rowsOf("sps"), dg=rowsOf("dailyGrowth");
+  const share=(a,b)=>b?'<span class="sub">('+fmtPct(a/b*100)+')</span>':"";
+
+  const totTables=sumBy(db,"Table Count"), biTables=sumBy(db,"BI Used Tables");
+  const totCols=sumBy(db,"Column Count"), biCols=sumBy(db,"BI Used Columns");
+  const totRows=sumBy(db,"Total Rows");
+  const repMB=sumBy(db,"Replicated Data Size (MB)"), dataMB=sumBy(db,"Data Size (MB)"), idxMB=sumBy(db,"Index Size (MB)");
+  const unusedMB=sumBy(un,"TotalSizeMB");
+  const dgMB=sumBy(dg,"Est. Total Size Per Day (MB)");
+  const spSap=sp.filter(r=>String(r.UsesSAP).toUpperCase()==="YES").length;
+
+  return [
+    {title:"Database Details", icon:"🗄️", grad:TILE_GRADS.db, items:[
+      {label:"Databases in Replication", value:fmtInt(db.length), hero:true},
+      {label:"Views", value:fmtInt(sumBy(db,"View Count"))},
+      {label:"Procedures", value:fmtInt(sumBy(db,"Proc Count"))},
+      {label:"Indexes", value:fmtInt(sumBy(db,"Index Count"))},
+      {label:"SP Dependencies on SAP DBs", value:fmtInt(sumBy(db,"SPs Depending on This DB"))}
+    ]},
+    {title:"Table Details", icon:"📋", grad:TILE_GRADS.tables, items:[
+      {label:"Total Tables", value:fmtInt(totTables), hero:true},
+      {label:"Used in BI", value:fmtInt(biTables)+share(biTables,totTables)},
+      {label:"Not Used in BI", value:fmtInt(totTables-biTables)+share(totTables-biTables,totTables)},
+      {label:"High Usage", value:fmtInt(pick(ov.usageLevel,"high"))},
+      {label:"Medium Usage", value:fmtInt(pick(ov.usageLevel,"medium"))},
+      {label:"Low Usage", value:fmtInt(pick(ov.usageLevel,"low"))}
+    ]},
+    {title:"Column Details", icon:"🧬", grad:TILE_GRADS.columns, items:[
+      {label:"Total Columns", value:fmtInt(totCols), hero:true},
+      {label:"Used in BI", value:fmtInt(biCols)+share(biCols,totCols)},
+      {label:"Unused Columns", value:fmtInt(totCols-biCols)+share(totCols-biCols,totCols)},
+      {label:"Avg Columns per Table", value:fmtNum1(totTables?totCols/totTables:0)}
+    ]},
+    {title:"Storage Details", icon:"💽", grad:TILE_GRADS.storage, items:[
+      {label:"Replicated Storage", value:fmtSize(repMB), hero:true},
+      {label:"Data Size", value:fmtSize(dataMB)},
+      {label:"Index Size", value:fmtSize(idxMB)},
+      {label:"BI Used Storage", value:kv("BI Used Storage")||"—"},
+      {label:"Held by Unused Tables", value:fmtSize(unusedMB)+share(unusedMB,repMB)},
+      {label:"Top-91 Tables' Share", value:kv("Top-91")||"—"}
+    ]},
+    {title:"Row Volume", icon:"🔢", grad:TILE_GRADS.rows, items:[
+      {label:"Total Rows", value:fmtInt(totRows), hero:true},
+      {label:"Rows in BI-Used Tables", value:kv("Total used Rows")||"—"},
+      {label:"Rows in Unused Tables", value:fmtInt(sumBy(un,"TableRowCount"))},
+      {label:"Avg Rows per Table", value:fmtInt(totTables?totRows/totTables:0)}
+    ]},
+    {title:"Stored Procedure Details", icon:"⚙️", grad:TILE_GRADS.sps, items:[
+      {label:"Stored Procedures", value:fmtInt(sp.length), hero:true},
+      {label:"Uses SAP Data", value:fmtInt(spSap)+share(spSap,sp.length)},
+      {label:"No SAP Dependency", value:fmtInt(sp.length-spSap)+share(sp.length-spSap,sp.length)},
+      {label:"Very High Complexity", value:fmtInt(sp.filter(r=>String(r.DependencyComplexity)==="Very High").length)},
+      {label:"Uses Dynamic SQL", value:fmtInt(sp.filter(r=>String(r.HasDynamicSQL).toUpperCase()==="YES").length)}
+    ]},
+    {title:"Daily Growth (Estimated)", icon:"🧮", grad:TILE_GRADS.growth, items:[
+      {label:"Data Written per Day", value:fmtSize(dgMB), hero:true},
+      {label:"Cells Written per Day", value:fmtInt(sumBy(dg,"Cells Inserted Per Day"))},
+      {label:"Projected / 30 Days", value:fmtSize(dgMB*30)},
+      {label:"Projected / Year", value:fmtSize(dgMB*365)},
+      {label:"Tables Covered", value:fmtInt(dg.length)}
+    ]}
+  ];
+}
+
 function renderOverviewBlocks(root){
-  const ov=STATE.overview, all=[...(ov.kpiA||[]),...(ov.kpiB||[])], used=new Set();
-  let html='<div style="display:flex;flex-direction:column;gap:11px">';
-  OVERVIEW_GROUPS.forEach(g=>{
-    const items=all.filter((k,i)=>{
-      if(used.has(i)) return false;
-      const hit=g.match.some(m=>k.label.indexOf(m)>-1);
-      if(hit) used.add(i);
-      return hit;
-    });
-    if(!items.length) return;
-    html+='<div><div class="groupbar" style="background:'+g.grad+'">'+escapeHtml(g.title)+'</div>'
-       + '<div class="kpis" style="margin-top:7px">'
-       + items.map(k=>'<div class="kpi" style="--kpi-accent:'+g.grad+'"><div class="lbl">'+escapeHtml(k.label)+'</div><div class="val">'+escapeHtml(k.value)+'</div></div>').join("")
-       + '</div></div>';
-  });
-  const rest=all.filter((k,i)=>!used.has(i));
-  if(rest.length){
-    html+='<div><div class="groupbar" style="background:linear-gradient(135deg,#64748b,#94a3b8)">Other Metrics</div>'
-       + '<div class="kpis" style="margin-top:7px">'
-       + rest.map(k=>'<div class="kpi" style="--kpi-accent:linear-gradient(180deg,#64748b,#94a3b8)"><div class="lbl">'+escapeHtml(k.label)+'</div><div class="val">'+escapeHtml(k.value)+'</div></div>').join("")
-       + '</div></div>';
-  }
-  html+='<div><div class="groupbar" style="background:linear-gradient(135deg,#0f766e,#14b8a6)">Distribution</div><div class="charts" style="margin-top:7px">'
+  const ov=STATE.overview||{};
+  const tiles=buildOverviewTiles();
+  let html='<div style="display:flex;flex-direction:column;gap:12px"><div class="tiles">'
+    + tiles.map(t=>
+        '<div class="tile" style="--tile-grad:'+t.grad+'">'
+        + '<div class="tile-head" style="background:'+t.grad+'"><span class="ticon">'+t.icon+'</span>'+escapeHtml(t.title)+'</div>'
+        + '<div class="tile-body">'
+        + t.items.map(i=>'<div class="trow'+(i.hero?" hero":"")+'"><span class="tl">'+escapeHtml(i.label)+'</span><span class="tv">'+i.value+'</span></div>').join("")
+        + '</div></div>').join("")
+    + '</div>';
+  html+='<div><div class="groupbar" style="background:'+TILE_GRADS.storage+'">Distribution</div><div class="charts" style="margin-top:7px">'
     + [["ovStorage","Replicated Storage by Database (GB)"],["ovStatus","Table Usage Status"],
        ["ovLevel","Usage Level (BI-used tables)"],["ovSp","Stored Procedure Category"]]
       .map(([id,t])=>'<div class="chart-card"><h3>'+t+'</h3><div class="canvas-wrap"><canvas id="'+id+'"></canvas></div></div>').join("")
@@ -1215,7 +1298,7 @@ function refreshSection(id){
   const rows=getFilteredSortedRows(id);
 
   document.getElementById("kpis").innerHTML=cfg.kpis(rows).map((k,i)=>{
-    const g=["linear-gradient(180deg,#4f46e5,#7c3aed)","linear-gradient(180deg,#0ea5e9,#06b6d4)","linear-gradient(180deg,#16a34a,#65a30d)","linear-gradient(180deg,#f59e0b,#f97316)","linear-gradient(180deg,#db2777,#9333ea)"][i%5];
+    const g=["linear-gradient(180deg,#5a5fd4,#7c5cd6)","linear-gradient(180deg,#0e7490,#12a4b4)","linear-gradient(180deg,#3f7d3a,#7aa332)","linear-gradient(180deg,#b45309,#e08a2e)","linear-gradient(180deg,#a1265c,#d4517e)"][i%5];
     return '<div class="kpi" style="--kpi-accent:'+g+'"><div class="lbl">'+escapeHtml(k.label)+'</div><div class="val">'+escapeHtml(String(k.value))+'</div></div>';
   }).join("");
 
