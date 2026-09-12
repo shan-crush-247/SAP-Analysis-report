@@ -17,9 +17,8 @@ roughly **4.28 TB of potentially reclaimable storage**.
 Double-click **`Report/SAP_Replication_Analysis_Report.html`**.
 
 That's the whole setup — no install, no build step, no local server, and no internet
-connection. The workbook is embedded in the page, so it loads its own data on open (expect a
-few seconds' spinner while it indexes ~150,000 rows). Nothing is ever uploaded anywhere; all
-parsing happens in the browser tab.
+connection. The analysed data is embedded in the page (pre-parsed and gzipped, 2.3 MB), so
+it loads itself on open in well under a second. Nothing is ever uploaded anywhere.
 
 Keep `Report/lib/` next to the HTML file. The whole `Report` folder is portable — copy it to
 any machine and it behaves identically.
@@ -51,7 +50,7 @@ sorted — the HTML export embeds the charts as images so it stands alone.
 |---|---|
 | `Core File/` | The source workbook. The data of record. |
 | `Report/` | The generated dashboard — open `SAP_Replication_Analysis_Report.html` |
-| `Report/lib/embedded-data.js` | The workbook embedded as base64 (~13 MB); this is what auto-loads |
+| `Report/lib/embedded-data.js` | The analysed data, pre-parsed and gzipped (~2.3 MB); this is what auto-loads |
 | `Report/lib/*.min.js` | SheetJS and Chart.js, vendored so the report works offline |
 | `Reference Report/` | An unrelated SCM dashboard, kept only as a design reference |
 | `.claude/skills/report-generator/` | Skill used to regenerate or extend the report |

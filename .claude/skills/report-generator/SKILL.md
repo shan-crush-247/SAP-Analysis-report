@@ -35,24 +35,54 @@ in `Core File\` into something a non-technical stakeholder can open and click th
 
 - **`Report\SAP_Replication_Analysis_Report.html`** — the app itself. Opens directly by
   double-click, no build step.
-- **`Report\lib\embedded-data.js`** — the workbook itself, base64-encoded into a JS global
-  (`window.EMBEDDED_WORKBOOK = {name, generated, b64}`), ~13 MB. The report calls
-  `bootFromEmbedded()` on startup, decodes it, and loads it through the same code path a
-  picked file would take, so **the user never sees a file picker**. This is deliberate — the
-  user asked for the data to load straight from the source with no prompt. A `file://` page
-  cannot fetch a local `.xlsx` (Chrome blocks it without `--allow-file-access-from-files`),
-  and a local web server would mean a process to start, so embedding is what makes
-  double-click-and-go work.
+- **`Report\lib\embedded-data.js`** — the **pre-parsed** dataset as a JS global
+  (`window.EMBEDDED_DATA = {name, generated, gz}`), where `gz` is base64 of gzipped JSON,
+  ~2.3 MB. The report calls `bootFromEmbedded()` on startup and loads it via
+  `loadEmbeddedData()`, so **the user never sees a file picker**.
 
-  **Re-embed whenever the source workbook changes** — the embedded copy is a snapshot:
-  ```powershell
-  $b64 = [System.Convert]::ToBase64String([System.IO.File]::ReadAllBytes($xlsx))
-  # write:  window.EMBEDDED_WORKBOOK = {name:"...", generated:"...", b64:"<b64>"};
-  ```
-  Keep the picker fallback (`showPicker()`) intact — it's what the report falls back to if
-  `embedded-data.js` is missing or corrupt, and it backs the "Reload / Change File" button.
-  Do not inline the base64 into the HTML itself; keeping it in its own file leaves the
-  report editable.
+  Two deliberate decisions here, don't undo either:
+  - **Embedded rather than fetched.** A `file://` page cannot fetch a local `.xlsx` (Chrome
+    blocks it without `--allow-file-access-from-files`) and a local server would mean a
+    process to start, so embedding is what makes double-click-and-go work.
+  - **Pre-parsed rather than the raw workbook.** Embedding the `.xlsx` itself was tried
+    first: `XLSX.read` alone cost **~6.2 s on every open** (plus row hydration), which the
+    user rejected as too slow. Pre-parsing cut it to **~0.35 s** and shrank the payload from
+    13.2 MB to 2.3 MB. Never go back to shipping the raw workbook as the primary path.
+
+  The JSON shape is `{name, generated, overview, sections:{<id>:{headers,rows,note}}}` with
+  `rows` as **arrays aligned to `headers`** (not objects — that's most of the size saving);
+  `loadEmbeddedData()` rehydrates them into objects so the rest of the report is identical
+  for both load paths.
+
+  Keep the raw-`.xlsx` path (`loadWorkbook`) and `showPicker()` intact — they back the
+  "Reload / Change File" button and the fallback when `embedded-data.js` is missing or the
+  browser lacks `DecompressionStream`. Don't inline the payload into the HTML; a separate
+  file keeps the report editable.
+
+### Regenerating `embedded-data.js` after the workbook changes
+
+The embedded data is a snapshot, so it must be rebuilt whenever `Core File\*.xlsx` changes.
+Reuse the report's own parser rather than writing a second one:
+
+1. Re-embed the raw workbook temporarily so the generator has something to read:
+   base64 the `.xlsx` into `lib/embedded-data.js` as
+   `window.EMBEDDED_WORKBOOK = {name, generated, b64}` (PowerShell:
+   `[Convert]::ToBase64String([IO.File]::ReadAllBytes($xlsx))`).
+2. `cp SAP_Replication_Analysis_Report.html _gen.html` and append a `<script>` that:
+   `XLSX.read`s `window.EMBEDDED_WORKBOOK.b64` → builds `{overview, sections}` using the
+   page's own `findSheet`/`sheetToAoa`/`parseOverviewSheet` and each config's `headerRow`,
+   `noteRow` and `dropRow` → `JSON.stringify` → `CompressionStream("gzip")` → base64 →
+   writes it into a `<pre>` between the markers `GENDATA:` and `:ENDGEN`.
+3. Run it headless and extract (the marker charset keeps it HTML-safe, and the strict
+   base64 class avoids matching the script's own source text in the dump):
+   ```
+   chrome.exe --headless=new --disable-gpu --no-sandbox --user-data-dir=<tmp> \
+     --virtual-time-budget=300000 --dump-dom "file:///.../_gen.html" > gen.html
+   grep -o 'GENDATA:[A-Za-z0-9+/=]\{1000,\}:ENDGEN' gen.html \
+     | sed 's/^GENDATA://; s/:ENDGEN$//' > payload.b64
+   ```
+4. Write `window.EMBEDDED_DATA = {name:"...", generated:"...", gz:"<payload>"};` to
+   `lib/embedded-data.js`, delete `_gen.html`, and re-run the verification test below.
 - **`Report\lib\xlsx.full.min.js`** and **`Report\lib\chart.umd.min.js`** — vendored
   (downloaded once, committed to disk) copies of SheetJS and Chart.js. The HTML references
   them by relative path so the report works with **no internet connection**. If these ever

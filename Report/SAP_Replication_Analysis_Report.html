@@ -137,7 +137,7 @@ table.dt tbody tr:last-child td{border-bottom:none}
       <div class="welcome-card" id="dropZone">
         <div class="welcome-icon" id="welcomeIcon">📊</div>
         <h2 id="welcomeTitle">Loading the SAP Replication analysis…</h2>
-        <p id="welcomeMsg">Reading the embedded workbook and indexing ~150,000 rows. This takes a few seconds.</p>
+        <p id="welcomeMsg">Loading ~200,000 analysed rows.</p>
         <div class="spinner" id="spinner"></div>
         <button class="btn primary big" id="welcomeLoadBtn" hidden>📂 Choose Excel File…</button>
         <p class="hint" id="welcomeHint" hidden>or drag &amp; drop the .xlsx file here</p>
@@ -661,6 +661,17 @@ function loadWorkbook(arrayBuffer, fileName){
     STATE.sections[id] = {search:"", local:{}, sort:Object.assign({},cfg.defaultSort), page:1, pageSize:50};
   });
 
+  finalizeData(fileName);
+}
+
+/* Shared by both load paths: the pre-parsed embedded dataset and an ad-hoc .xlsx. */
+function finalizeData(fileName){
+  Object.keys(SHEET_CONFIGS).forEach(id=>{
+    if(!STATE.sections[id]){
+      STATE.sections[id] = {search:"", local:{}, sort:Object.assign({},SHEET_CONFIGS[id].defaultSort), page:1, pageSize:50};
+    }
+  });
+
   /* The DB summary sheet is the authoritative list of database names. Other sheets spell
      the same database in mixed case (dbo/DBO, RRLive/RRLIVE), so filtering matches
      case-insensitively rather than treating each spelling as its own database. */
@@ -681,6 +692,33 @@ function loadWorkbook(arrayBuffer, fileName){
   STATE.loaded = true;
   STATE.fileName = fileName;
   STATE.loadedAt = new Date();
+}
+
+/* The embedded dataset ships pre-parsed (gzipped JSON of header + row arrays) because
+   parsing the raw .xlsx in the browser costs ~6s on every open. Rows are rehydrated into
+   objects here so the rest of the report is identical for both load paths. */
+async function loadEmbeddedData(packedGzB64, fileName){
+  const bin = atob(packedGzB64);
+  const bytes = new Uint8Array(bin.length);
+  for(let i=0;i<bin.length;i++) bytes[i] = bin.charCodeAt(i);
+  const json = await new Response(new Blob([bytes]).stream().pipeThrough(new DecompressionStream("gzip"))).text();
+  const packed = JSON.parse(json);
+
+  STATE.overview = packed.overview || {kpiA:[],kpiB:[],dbStorage:[],status:[],usageLevel:[],spCategory:[]};
+  STATE.data = {};
+  Object.keys(SHEET_CONFIGS).forEach(id=>{
+    const sec = packed.sections ? packed.sections[id] : null;
+    if(!sec){ STATE.data[id]={rows:[],note:null}; return; }
+    const hdrs = sec.headers;
+    const rows = sec.rows.map(arr=>{
+      const o = {};
+      for(let i=0;i<hdrs.length;i++) o[hdrs[i]] = arr[i];
+      return o;
+    });
+    STATE.data[id] = {rows, note:sec.note||null};
+  });
+
+  finalizeData(fileName);
 }
 
 /* ---------------------------------------------------------------------- *
@@ -1160,22 +1198,30 @@ function base64ToArrayBuffer(b64){
   return bytes.buffer;
 }
 function bootFromEmbedded(){
-  const emb = window.EMBEDDED_WORKBOOK;
-  if(!emb || !emb.b64){
-    showPicker("This report runs entirely inside this browser tab. The Excel file is read on your machine and is never uploaded anywhere.");
+  const data = window.EMBEDDED_DATA;
+  if(data && data.gz){
+    loadEmbeddedData(data.gz, data.name || "Embedded dataset")
+      .then(onWorkbookLoaded)
+      .catch(err=>{
+        console.error(err);
+        showPicker("The embedded dataset could not be read ("+err.message+"). Choose the .xlsx file manually instead.");
+      });
     return;
   }
-  /* Yield to the browser first so the loading state actually paints before the
-     parse blocks the main thread. */
-  setTimeout(()=>{
-    try{
-      loadWorkbook(base64ToArrayBuffer(emb.b64), emb.name || "Embedded workbook");
-      onWorkbookLoaded();
-    }catch(err){
-      console.error(err);
-      showPicker("The embedded workbook could not be read ("+err.message+"). Choose the .xlsx file manually instead.");
-    }
-  }, 60);
+  const emb = window.EMBEDDED_WORKBOOK;
+  if(emb && emb.b64){
+    setTimeout(()=>{
+      try{
+        loadWorkbook(base64ToArrayBuffer(emb.b64), emb.name || "Embedded workbook");
+        onWorkbookLoaded();
+      }catch(err){
+        console.error(err);
+        showPicker("The embedded workbook could not be read ("+err.message+"). Choose the .xlsx file manually instead.");
+      }
+    }, 60);
+    return;
+  }
+  showPicker("This report runs entirely inside this browser tab. The Excel file is read on your machine and is never uploaded anywhere.");
 }
 
 renderNav();

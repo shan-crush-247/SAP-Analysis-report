@@ -1,10 +1,12 @@
 # SAP Replication Analytics — Local Report
 
-Double-click **`SAP_Replication_Analysis_Report.html`**. That's it — the workbook is
-embedded in the report, so it loads its own data on open. No file picker, no server, no
-internet connection, and nothing is ever uploaded anywhere.
+Double-click **`SAP_Replication_Analysis_Report.html`**. That's it — the data is embedded in
+the report, so it loads itself on open. No file picker, no server, no internet connection,
+and nothing is ever uploaded anywhere.
 
-There's a short loading spinner on open while it indexes ~150,000 rows.
+It opens in well under a second. The data ships **pre-parsed** (gzipped JSON, 2.3 MB) rather
+than as the raw workbook, because parsing the `.xlsx` in the browser cost about 6 seconds on
+every single open.
 
 ## Using it
 
@@ -23,7 +25,7 @@ There's a short loading spinner on open while it indexes ~150,000 rows.
 | File | Purpose |
 |---|---|
 | `SAP_Replication_Analysis_Report.html` | The report. Open this. |
-| `lib\embedded-data.js` | The workbook, embedded (~13 MB). This is what loads automatically. |
+| `lib\embedded-data.js` | The analysed data, pre-parsed and gzipped (~2.3 MB). This is what loads automatically. |
 | `lib\xlsx.full.min.js`, `lib\chart.umd.min.js` | Excel parsing + charting, vendored for offline use. |
 
 Keep the `lib\` folder beside the HTML file. You can copy the whole `Report` folder to any
@@ -31,16 +33,16 @@ machine and it works the same, with no setup.
 
 ## Refreshing the data
 
-The embedded copy is a snapshot. When the workbook in `..\Core File\` is updated, re-embed it:
+The embedded data is a snapshot taken from the workbook in `..\Core File\`. When that
+workbook is updated, `lib\embedded-data.js` has to be regenerated — the report will keep
+showing the old numbers until it is.
 
-```powershell
-$xlsx  = "D:\VS_PROJECTS\SAP Analysis report\Core File\SAP_Replication_Consolidated_Analysis_Report_V1.1.xlsx"
-$outJs = "D:\VS_PROJECTS\SAP Analysis report\Report\lib\embedded-data.js"
-$b64   = [System.Convert]::ToBase64String([System.IO.File]::ReadAllBytes($xlsx))
-$js    = "window.EMBEDDED_WORKBOOK = {name:""" + (Split-Path $xlsx -Leaf) + """, generated:""" + (Get-Date -Format "yyyy-MM-dd HH:mm") + """, b64:""" + $b64 + """};"
-[System.IO.File]::WriteAllText($outJs, $js, [System.Text.Encoding]::UTF8)
-```
+Regenerating means re-running the workbook through the report's own parser and re-packing
+the result, so it isn't a one-line copy. The procedure is written up in the
+**`report-generator` skill** (`.claude\skills\report-generator\SKILL.md`) — ask Claude Code
+to refresh the report data and it will follow it, including the verification step that
+checks the row counts still line up with the workbook.
 
-If the new workbook also changed shape (sheets added, headers moved), use the
-`report-generator` skill in `.claude\skills\` — it documents the parsing rules and the
-test procedure.
+**In the meantime**, the report can always read a workbook directly: click
+**🔄 Reload / Change File** and pick any `.xlsx`. That path parses in-browser (slower, ~6s)
+but needs no regeneration, so it's the quick way to look at an updated workbook.
