@@ -10,15 +10,20 @@ every single open.
 
 ## Using it
 
-- Pick a section in the left sidebar: Overview, Databases, Tables, Columns, Stored
+- Pick a section in the left sidebar: **Overview & Databases** (the landing page — summary
+  KPIs and charts on top, the per-database table underneath), Tables, Columns, Stored
   Procedures, SP → Table Lineage, View Lineage, Unused Tables, Top Insights, and the two
   Insertion Trend views.
-- Narrow things down with the search box, the column-header sorting, the dropdown filters,
-  and the database filter at the top of each section.
-- **⤓ Export Excel** / **⤓ Export HTML** save exactly what's currently filtered and sorted
-  (the HTML export embeds the section's charts as images, so it can be shared on its own).
-- **🔄 Reload / Change File** lets you point the report at a different workbook ad hoc,
-  without changing the embedded copy.
+- Every table has a **filter box under each column heading**, click-to-sort on every heading,
+  a section-wide search box, and a database filter. **Clear filters** resets them all.
+- Each table ends with a **TOTAL row** summing every numeric column across all filtered
+  rows — not just the page you're looking at.
+- Column headings are exactly as they appear in the workbook, so they line up with the
+  source data and with anything exported.
+- **⤓ Export Excel** / **⤓ Export HTML** save exactly what's currently filtered and sorted,
+  totals included (the HTML export embeds the charts as images, so it stands alone).
+- **🔄 Refresh** re-reads the embedded dataset and redraws the current section, keeping your
+  filters.
 
 ## Files
 
@@ -43,6 +48,6 @@ the result, so it isn't a one-line copy. The procedure is written up in the
 to refresh the report data and it will follow it, including the verification step that
 checks the row counts still line up with the workbook.
 
-**In the meantime**, the report can always read a workbook directly: click
-**🔄 Reload / Change File** and pick any `.xlsx`. That path parses in-browser (slower, ~6s)
-but needs no regeneration, so it's the quick way to look at an updated workbook.
+Note that **🔄 Refresh** re-reads the embedded dataset — it does not go back to the workbook
+in `Core File\`, so it won't pick up a newer workbook on its own. That needs the
+regeneration step above.

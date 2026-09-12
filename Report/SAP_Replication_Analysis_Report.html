@@ -6,107 +6,107 @@
 <title>SAP Replication Analytics</title>
 <style>
 :root{
-  --bg:#f3f5fb; --panel:#ffffff; --panel2:#f8f9fd; --ink:#111827; --ink2:#6b7280; --line:#e2e5ee;
-  --accent:#4f46e5; --accent-ink:#ffffff; --accent2:#0ea5e9;
-  --good:#16a34a; --good-bg:#e8f8ee; --bad:#dc2626; --bad-bg:#fdecec; --warn:#d97706; --warn-bg:#fdf3e3;
-  --muted:#6b7280; --muted-bg:#eef0f5; --shadow:0 1px 2px rgba(16,24,40,.06), 0 1px 3px rgba(16,24,40,.08);
+  --bg:#f3f5fb; --panel:#ffffff; --panel2:#f7f8fc; --ink:#111827; --ink2:#667085; --line:#e3e6ef;
+  --accent:#4f46e5; --accent-ink:#ffffff;
+  --good:#16a34a; --good-bg:#e8f8ee; --bad:#dc2626; --bad-bg:#fdecec; --warn:#b45309; --warn-bg:#fdf3e3;
+  --muted:#667085; --muted-bg:#eef0f6; --shadow:0 1px 2px rgba(16,24,40,.05),0 1px 3px rgba(16,24,40,.07);
 }
 html[data-theme="dark"]{
-  --bg:#0f1420; --panel:#161c2c; --panel2:#1c2436; --ink:#e7ebf3; --ink2:#94a1b8; --line:#2a3348;
-  --accent:#6366f1; --accent-ink:#ffffff; --accent2:#38bdf8;
-  --good:#4ade80; --good-bg:#123321; --bad:#f87171; --bad-bg:#3a1418; --warn:#fbbf24; --warn-bg:#3a2a0f;
-  --muted:#94a1b8; --muted-bg:#232b3d; --shadow:0 1px 2px rgba(0,0,0,.4);
+  --bg:#0d1220; --panel:#151b2b; --panel2:#1b2334; --ink:#e8ecf5; --ink2:#95a2b9; --line:#293246;
+  --accent:#6366f1; --accent-ink:#ffffff;
+  --good:#4ade80; --good-bg:#12331f; --bad:#f87171; --bad-bg:#3a1417; --warn:#fbbf24; --warn-bg:#3a2a0f;
+  --muted:#95a2b9; --muted-bg:#222b3d; --shadow:0 1px 2px rgba(0,0,0,.35);
 }
 *{box-sizing:border-box}
-body{margin:0;background:var(--bg);color:var(--ink);font:13.5px/1.45 -apple-system,Segoe UI,Roboto,Arial,sans-serif;}
-h1,h2,h3{margin:0;font-weight:700}
+body{margin:0;background:var(--bg);color:var(--ink);font:13px/1.4 -apple-system,Segoe UI,Roboto,Arial,sans-serif}
+h1,h2,h3,h4{margin:0;font-weight:700}
 button{font-family:inherit}
 .app{display:flex;min-height:100vh}
-.sidebar{width:250px;flex:0 0 250px;background:var(--panel);border-right:1px solid var(--line);display:flex;flex-direction:column;position:sticky;top:0;height:100vh}
-.brand{padding:18px 18px 14px;border-bottom:1px solid var(--line)}
-.brand-title{font-size:15.5px;font-weight:800;letter-spacing:.2px}
-.brand-sub{font-size:11.5px;color:var(--ink2);margin-top:2px}
-.nav{flex:1;overflow-y:auto;padding:10px}
-.nav-item{display:flex;align-items:center;gap:9px;padding:9px 11px;border-radius:9px;cursor:pointer;color:var(--ink2);font-weight:600;font-size:12.8px;margin-bottom:2px;user-select:none}
+
+/* sidebar */
+.sidebar{width:218px;flex:0 0 218px;background:var(--panel);border-right:1px solid var(--line);display:flex;flex-direction:column;position:sticky;top:0;height:100vh}
+.brand{padding:15px 15px 12px;border-bottom:1px solid var(--line)}
+.brand-title{font-size:14.5px;font-weight:800;letter-spacing:.2px}
+.brand-sub{font-size:11px;color:var(--ink2);margin-top:2px}
+.nav{flex:1;overflow-y:auto;padding:8px}
+.nav-item{display:flex;align-items:center;gap:8px;padding:8px 10px;border-radius:8px;cursor:pointer;color:var(--ink2);font-weight:600;font-size:12.3px;margin-bottom:1px;user-select:none}
 .nav-item:hover{background:var(--panel2);color:var(--ink)}
 .nav-item.active{background:var(--accent);color:var(--accent-ink)}
-.nav-item.disabled{opacity:.4;cursor:not-allowed;pointer-events:none}
-.nav-icon{width:18px;text-align:center}
-.sidebar-foot{padding:12px 16px;border-top:1px solid var(--line);font-size:11px;color:var(--ink2)}
-.sidebar-foot b{color:var(--ink)}
-.sidebar-foot .row{display:flex;justify-content:space-between;margin-bottom:3px}
+.nav-icon{width:17px;text-align:center}
+
+/* main */
 .main{flex:1;min-width:0;display:flex;flex-direction:column}
-.topbar{display:flex;align-items:flex-start;justify-content:space-between;gap:14px;padding:16px 22px;border-bottom:1px solid var(--line);background:var(--panel);flex-wrap:wrap}
-.topbar-title h1{font-size:18px}
-.topbar-sub{font-size:12px;color:var(--ink2);margin-top:2px}
-.topbar-controls{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
-.btn{border:1px solid var(--line);background:var(--panel);color:var(--ink);border-radius:8px;padding:8px 12px;font-size:12.5px;font-weight:600;cursor:pointer;white-space:nowrap}
+.topbar{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:11px 18px;border-bottom:1px solid var(--line);background:var(--panel);flex-wrap:wrap;position:sticky;top:0;z-index:20}
+.topbar-title h1{font-size:16.5px}
+.topbar-sub{font-size:11.5px;color:var(--ink2);margin-top:1px}
+.topbar-controls{display:flex;gap:7px;flex-wrap:wrap;align-items:center}
+.btn{border:1px solid var(--line);background:var(--panel);color:var(--ink);border-radius:7px;padding:7px 11px;font-size:12.2px;font-weight:600;cursor:pointer;white-space:nowrap}
 .btn:hover{border-color:var(--accent)}
 .btn.primary{background:var(--accent);border-color:var(--accent);color:var(--accent-ink)}
-.btn.primary:hover{filter:brightness(1.06)}
-.btn.big{padding:11px 20px;font-size:13.5px}
-.btn:disabled{opacity:.45;cursor:not-allowed}
-.welcome{flex:1;display:flex;align-items:center;justify-content:center;padding:40px 20px}
-.welcome-card{max-width:460px;text-align:center;background:var(--panel);border:1.5px dashed var(--line);border-radius:16px;padding:40px 32px}
-.welcome-icon{font-size:40px;margin-bottom:10px}
-.welcome-card h2{font-size:17px;margin-bottom:8px}
-.welcome-card p{color:var(--ink2);font-size:12.8px;margin:6px 0}
-.welcome-card .hint{font-size:11.5px;color:var(--ink2);margin-top:12px}
-.welcome-card.drag{border-color:var(--accent);background:var(--panel2)}
-.spinner{width:26px;height:26px;margin:16px auto 4px;border:3px solid var(--line);border-top-color:var(--accent);border-radius:50%;animation:spin .8s linear infinite}
-@keyframes spin{to{transform:rotate(360deg)}}
-.workspace{padding:18px 22px 40px;display:flex;flex-direction:column;gap:16px}
-.controlbar{display:flex;gap:10px;flex-wrap:wrap;align-items:center;justify-content:space-between}
-.controlbar-left,.controlbar-right{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
-.ddwrap{position:relative}
-.dd-panel{position:absolute;top:calc(100% + 6px);left:0;z-index:30;background:var(--panel);border:1px solid var(--line);border-radius:10px;box-shadow:var(--shadow);padding:10px;min-width:230px;max-height:320px;overflow:auto}
-.dd-panel label{display:flex;align-items:center;gap:7px;padding:4px 4px;font-size:12.3px;cursor:pointer;border-radius:6px}
-.dd-panel label:hover{background:var(--panel2)}
-.dd-actions{display:flex;gap:6px;margin-bottom:6px;padding-bottom:6px;border-bottom:1px solid var(--line)}
-.dd-actions button{flex:1;font-size:11px;padding:4px}
-input[type=text],input[type=search],select{border:1px solid var(--line);background:var(--panel);color:var(--ink);border-radius:8px;padding:7.5px 10px;font-size:12.5px;min-width:120px}
-.kpis{display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:10px}
-.kpi{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:13px 15px;box-shadow:var(--shadow)}
-.kpi .lbl{font-size:11px;color:var(--ink2);font-weight:600;text-transform:uppercase;letter-spacing:.3px;margin-bottom:5px}
-.kpi .val{font-size:19px;font-weight:800}
-.charts{display:grid;grid-template-columns:repeat(auto-fit,minmax(360px,1fr));gap:14px}
-.chart-card{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:14px;box-shadow:var(--shadow)}
-.chart-card h3{font-size:12.8px;margin-bottom:10px;color:var(--ink)}
-.chart-card .canvas-wrap{position:relative;height:260px}
-.note-panel{background:var(--panel2);border:1px solid var(--line);border-radius:10px;padding:0;overflow:hidden}
-.note-head{display:flex;align-items:center;justify-content:space-between;padding:10px 14px;cursor:pointer;font-weight:700;font-size:12.5px}
-.note-body{padding:0 14px 14px;font-size:12.2px;color:var(--ink2);line-height:1.55;display:none}
+.btn:disabled{opacity:.5;cursor:not-allowed}
+.workspace{padding:13px 18px 26px;display:flex;flex-direction:column;gap:12px;flex:1}
+
+/* blocks */
+.block-title{font-size:13.5px;font-weight:700;display:flex;align-items:center;gap:8px;margin-top:2px}
+.block-title:before{content:"";width:3px;height:14px;background:var(--accent);border-radius:2px}
+.group-label{font-size:10.5px;font-weight:700;letter-spacing:.6px;text-transform:uppercase;color:var(--ink2);margin:2px 0 -4px}
+.kpis{display:grid;grid-template-columns:repeat(auto-fit,minmax(148px,1fr));gap:8px}
+.kpi{background:var(--panel);border:1px solid var(--line);border-radius:9px;padding:9px 11px;box-shadow:var(--shadow)}
+.kpi .lbl{font-size:10.3px;color:var(--ink2);font-weight:600;text-transform:uppercase;letter-spacing:.3px;margin-bottom:3px;line-height:1.25}
+.kpi .val{font-size:17px;font-weight:800;line-height:1.15}
+.charts{display:grid;grid-template-columns:repeat(auto-fit,minmax(300px,1fr));gap:10px}
+.chart-card{background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:11px;box-shadow:var(--shadow)}
+.chart-card h3{font-size:12px;margin-bottom:8px}
+.canvas-wrap{position:relative;height:232px}
+.note-panel{background:var(--panel);border:1px solid var(--line);border-radius:9px;overflow:hidden}
+.note-head{display:flex;align-items:center;justify-content:space-between;padding:8px 12px;cursor:pointer;font-weight:700;font-size:12px}
+.note-body{padding:0 12px 12px;font-size:11.8px;color:var(--ink2);line-height:1.5;display:none}
 .note-panel.open .note-body{display:block}
-.table-toolbar{display:flex;gap:8px;flex-wrap:wrap;align-items:center;justify-content:space-between}
-.toolbar-left,.toolbar-right{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
+.infogrid{display:grid;grid-template-columns:repeat(auto-fit,minmax(165px,1fr));gap:7px}
+.infoitem{background:var(--panel);border:1px solid var(--line);border-radius:8px;padding:7px 10px;display:flex;justify-content:space-between;gap:8px;align-items:baseline;font-size:12px}
+.infoitem span{color:var(--ink2)}
+.infoitem b{font-weight:700;white-space:nowrap}
+
+/* toolbar */
+.toolbar{display:flex;gap:8px;flex-wrap:wrap;align-items:center;justify-content:space-between}
+.toolbar-left,.toolbar-right{display:flex;gap:7px;flex-wrap:wrap;align-items:center}
+input[type=text],input[type=search],select{border:1px solid var(--line);background:var(--panel);color:var(--ink);border-radius:7px;padding:6.5px 9px;font-size:12.2px}
+#globalSearch{min-width:210px}
 .count-badge{font-size:11.5px;color:var(--ink2);font-weight:600}
-.table-wrap{background:var(--panel);border:1px solid var(--line);border-radius:12px;overflow:auto;box-shadow:var(--shadow);max-height:640px}
-table.dt{border-collapse:collapse;width:100%;font-size:12.3px}
-table.dt thead th{position:sticky;top:0;background:var(--panel2);text-align:left;padding:9px 12px;font-weight:700;color:var(--ink);border-bottom:1px solid var(--line);white-space:nowrap;cursor:pointer;user-select:none}
+.ddwrap{position:relative}
+.dd-panel{position:absolute;top:calc(100% + 5px);left:0;z-index:30;background:var(--panel);border:1px solid var(--line);border-radius:9px;box-shadow:var(--shadow);padding:9px;min-width:215px;max-height:300px;overflow:auto}
+.dd-panel label{display:flex;align-items:center;gap:7px;padding:3px;font-size:12px;cursor:pointer;border-radius:5px}
+.dd-panel label:hover{background:var(--panel2)}
+.dd-actions{display:flex;gap:5px;margin-bottom:5px;padding-bottom:5px;border-bottom:1px solid var(--line)}
+.dd-actions button{flex:1;font-size:11px;padding:4px;cursor:pointer;border:1px solid var(--line);background:var(--panel);color:var(--ink);border-radius:5px}
+
+/* table */
+.table-wrap{background:var(--panel);border:1px solid var(--line);border-radius:10px;overflow:auto;box-shadow:var(--shadow);max-height:calc(100vh - 230px);min-height:240px}
+table.dt{border-collapse:separate;border-spacing:0;width:100%;font-size:12.1px}
+table.dt thead th{position:sticky;top:0;z-index:6;background:var(--panel2);text-align:left;padding:0 10px;height:36px;font-weight:700;color:var(--ink);border-bottom:1px solid var(--line);white-space:nowrap;cursor:pointer;user-select:none}
 table.dt thead th:hover{color:var(--accent)}
-table.dt thead th .arrow{margin-left:4px;opacity:.5;font-size:10px}
-table.dt tbody td{padding:8px 12px;border-bottom:1px solid var(--line);white-space:nowrap}
+table.dt thead th .arrow{margin-left:4px;opacity:.55;font-size:9.5px}
+table.dt thead tr.filters th{top:36px;z-index:5;height:34px;padding:0 6px;cursor:default}
+table.dt thead tr.filters input{width:100%;min-width:90px;padding:4px 6px;font-size:11.4px;border-radius:5px}
+table.dt tbody td{padding:7px 10px;border-bottom:1px solid var(--line);white-space:nowrap}
 table.dt tbody tr:hover{background:var(--panel2)}
 table.dt td.num,table.dt th.num{text-align:right;font-variant-numeric:tabular-nums}
-table.dt tbody tr:last-child td{border-bottom:none}
-.empty-row td{text-align:center;color:var(--ink2);padding:24px}
-.badge{display:inline-block;padding:2.5px 9px;border-radius:999px;font-size:11px;font-weight:700}
+table.dt tfoot td{position:sticky;bottom:0;z-index:5;background:var(--panel2);border-top:2px solid var(--line);padding:8px 10px;font-weight:800;white-space:nowrap}
+.empty-row td{text-align:center;color:var(--ink2);padding:26px}
+.badge{display:inline-block;padding:2px 8px;border-radius:999px;font-size:10.8px;font-weight:700}
 .b-good{background:var(--good-bg);color:var(--good)}
 .b-bad{background:var(--bad-bg);color:var(--bad)}
 .b-warn{background:var(--warn-bg);color:var(--warn)}
-.b-accent{background:var(--panel2);color:var(--accent)}
+.b-accent{background:var(--muted-bg);color:var(--accent)}
 .b-muted,.b-neutral{background:var(--muted-bg);color:var(--muted)}
-.pager{display:flex;align-items:center;justify-content:flex-end;gap:6px;flex-wrap:wrap}
-.pager button{border:1px solid var(--line);background:var(--panel);color:var(--ink);border-radius:7px;padding:5px 9px;font-size:12px;cursor:pointer}
+.pager{display:flex;align-items:center;justify-content:flex-end;gap:5px;flex-wrap:wrap}
+.pager button{border:1px solid var(--line);background:var(--panel);color:var(--ink);border-radius:6px;padding:5px 9px;font-size:11.8px;cursor:pointer}
 .pager button:disabled{opacity:.4;cursor:not-allowed}
-.pager .pageinfo{font-size:12px;color:var(--ink2);margin:0 6px}
+.pager .pageinfo{font-size:11.8px;color:var(--ink2);margin-right:6px}
+.errbar{background:var(--bad-bg);color:var(--bad);border:1px solid var(--bad);border-radius:9px;padding:11px 14px;font-weight:600}
 ::-webkit-scrollbar{width:10px;height:10px}
 ::-webkit-scrollbar-thumb{background:var(--line);border-radius:6px}
-@media (max-width:900px){
-  .sidebar{width:74px;flex-basis:74px}
-  .brand-sub,.nav-item span.label{display:none}
-  .sidebar-foot{display:none}
-}
+@media (max-width:980px){ .sidebar{width:60px;flex-basis:60px} .brand-sub,.nav-item span.label{display:none} }
 </style>
 </head>
 <body>
@@ -114,44 +114,36 @@ table.dt tbody tr:last-child td{border-bottom:none}
   <aside class="sidebar">
     <div class="brand">
       <div class="brand-title">SAP Replication Analytics</div>
-      <div class="brand-sub">Storage &amp; BI Usage · Local Report</div>
+      <div class="brand-sub">Storage &amp; BI Usage</div>
     </div>
     <nav class="nav" id="nav"></nav>
-    <div class="sidebar-foot" id="sidebarFoot"><div>No workbook loaded</div></div>
   </aside>
 
   <main class="main">
     <header class="topbar">
       <div class="topbar-title">
-        <h1 id="sectionTitle">Welcome</h1>
-        <div class="topbar-sub" id="sectionSub">Load the SAP Replication analysis workbook to begin</div>
+        <h1 id="sectionTitle">Overview &amp; Databases</h1>
+        <div class="topbar-sub" id="sectionSub"></div>
       </div>
-      <div class="topbar-controls" id="topbarControls">
+      <div class="topbar-controls">
         <button class="btn" id="themeBtn" title="Toggle light / dark">🌙 Dark</button>
-        <button class="btn primary" id="loadBtn">📂 Load Excel File</button>
-        <input type="file" id="fileInput" accept=".xlsx,.xls" style="display:none">
+        <button class="btn" id="exportXlsxBtn">⤓ Export Excel</button>
+        <button class="btn" id="exportHtmlBtn">⤓ Export HTML</button>
+        <button class="btn primary" id="refreshBtn">🔄 Refresh</button>
       </div>
     </header>
 
-    <section class="welcome" id="welcome">
-      <div class="welcome-card" id="dropZone">
-        <div class="welcome-icon" id="welcomeIcon">📊</div>
-        <h2 id="welcomeTitle">Loading the SAP Replication analysis…</h2>
-        <p id="welcomeMsg">Loading ~200,000 analysed rows.</p>
-        <div class="spinner" id="spinner"></div>
-        <button class="btn primary big" id="welcomeLoadBtn" hidden>📂 Choose Excel File…</button>
-        <p class="hint" id="welcomeHint" hidden>or drag &amp; drop the .xlsx file here</p>
-      </div>
-    </section>
-
-    <section class="workspace" id="workspace" hidden>
-      <div class="controlbar" id="controlbar"></div>
+    <section class="workspace" id="workspace">
+      <div id="errBox"></div>
+      <div id="overviewBlocks"></div>
+      <div class="block-title" id="tableHeading" hidden></div>
       <div class="kpis" id="kpis"></div>
       <div class="charts" id="charts"></div>
       <div class="note-panel" id="notePanel" hidden></div>
-      <div class="table-toolbar" id="tableToolbar"></div>
+      <div class="toolbar" id="toolbar"></div>
       <div class="table-wrap" id="tableWrap"></div>
       <div class="pager" id="pager"></div>
+      <div id="footerBlocks"></div>
     </section>
   </main>
 </div>
@@ -163,357 +155,390 @@ table.dt tbody tr:last-child td{border-bottom:none}
 "use strict";
 
 /* ---------------------------------------------------------------------- *
- * Config: report sections, one per source sheet (01 handled specially)   *
+ * Sections. Column `key` doubles as the display label so headings always  *
+ * match the source workbook exactly.                                      *
  * ---------------------------------------------------------------------- */
 const NAV_ITEMS = [
-  {id:"overview", icon:"🏠", label:"Overview"},
-  {id:"databases", icon:"🗄️", label:"Databases"},
-  {id:"tables", icon:"📋", label:"Tables"},
-  {id:"columns", icon:"🧬", label:"Columns"},
-  {id:"sps", icon:"⚙️", label:"Stored Procedures"},
-  {id:"splineage", icon:"🔗", label:"SP → Table Lineage"},
-  {id:"viewlineage", icon:"🕸️", label:"View Lineage"},
-  {id:"unused", icon:"🗑️", label:"Unused Tables"},
-  {id:"insights", icon:"💡", label:"Top Insights"},
-  {id:"insTables", icon:"📈", label:"Insertion Trends (Tables)"},
-  {id:"insDb", icon:"📊", label:"Insertion Trends (Databases)"}
+  {id:"overview",     icon:"🏠", label:"Overview & Databases"},
+  {id:"tables",       icon:"📋", label:"Tables"},
+  {id:"columns",      icon:"🧬", label:"Columns"},
+  {id:"sps",          icon:"⚙️", label:"Stored Procedures"},
+  {id:"splineage",    icon:"🔗", label:"SP → Table Lineage"},
+  {id:"viewlineage",  icon:"🕸️", label:"View Lineage"},
+  {id:"unused",       icon:"🗑️", label:"Unused Tables"},
+  {id:"insights",     icon:"💡", label:"Top Insights"},
+  {id:"insTables",    icon:"📈", label:"Insertion Trends (Tables)"},
+  {id:"insDb",        icon:"📊", label:"Insertion Trends (Databases)"}
 ];
 
 const SHEET_CONFIGS = {
   databases:{
     sheetCode:"02", headerRow:0,
-    title:"Databases", sub:"Per-database storage, table/column counts, and BI usage coverage",
+    title:"Databases", sub:"Per-database storage, object counts and BI usage coverage",
     dbKey:"Database Name",
     dropRow:(r)=>String(r["Database Name"]||"").trim().toUpperCase()==="TOTAL",
     defaultSort:{key:"Replicated Data Size (MB)", dir:"desc"},
     searchable:["Database Name"],
     columns:[
-      {key:"Database Name", label:"Database", type:"text"},
-      {key:"Table Count", label:"Tables", type:"int"},
-      {key:"View Count", label:"Views", type:"int"},
-      {key:"Proc Count", label:"Procs", type:"int"},
-      {key:"Column Count", label:"Columns", type:"int"},
-      {key:"Index Count", label:"Indexes", type:"int"},
-      {key:"Total Rows", label:"Total Rows", type:"int"},
-      {key:"Data Size (MB)", label:"Data Size", type:"size"},
-      {key:"Index Size (MB)", label:"Index Size", type:"size"},
-      {key:"Replicated Data Size (MB)", label:"Replicated Size", type:"size"},
-      {key:"BI Used Tables", label:"BI Used Tbls", type:"int"},
-      {key:"BI Unused Tables", label:"BI Unused Tbls", type:"int"},
-      {key:"Table Usage %", label:"Table Usage %", type:"pct"},
-      {key:"BI Used Columns", label:"BI Used Cols", type:"int"},
-      {key:"BI Unused Columns", label:"BI Unused Cols", type:"int"},
-      {key:"Column Usage %", label:"Column Usage %", type:"pct"},
-      {key:"SPs Depending on This DB", label:"Dependent SPs", type:"int"}
+      {key:"Database Name", type:"text"},
+      {key:"Table Count", type:"int"},
+      {key:"View Count", type:"int"},
+      {key:"Proc Count", type:"int"},
+      {key:"Column Count", type:"int"},
+      {key:"Index Count", type:"int"},
+      {key:"Total Rows", type:"int"},
+      {key:"Data Size (MB)", type:"size"},
+      {key:"Index Size (MB)", type:"size"},
+      {key:"Replicated Data Size (MB)", type:"size"},
+      {key:"BI Used Tables", type:"int"},
+      {key:"BI Unused Tables", type:"int"},
+      {key:"Table Usage %", type:"pct"},
+      {key:"BI Used Columns", type:"int"},
+      {key:"BI Unused Columns", type:"int"},
+      {key:"Column Usage %", type:"pct"},
+      {key:"SPs Depending on This DB", type:"int"}
     ],
     kpis:(rows)=>[
       {label:"Databases", value:fmtInt(rows.length)},
       {label:"Total Tables", value:fmtInt(sumBy(rows,"Table Count"))},
+      {label:"Total Columns", value:fmtInt(sumBy(rows,"Column Count"))},
       {label:"Total Rows", value:fmtInt(sumBy(rows,"Total Rows"))},
       {label:"Replicated Storage", value:fmtSize(sumBy(rows,"Replicated Data Size (MB)"))},
+      {label:"BI Used Tables", value:fmtInt(sumBy(rows,"BI Used Tables"))},
       {label:"Avg Table Usage %", value:fmtPct(avgBy(rows,"Table Usage %"))}
     ],
-    charts:[{title:"Replicated Storage by Database (Top 15)", build:(rows)=>topNBarChart(rows,"Database Name","Replicated Data Size (MB)",15,"GB",1024)}]
+    charts:[
+      {title:"Replicated Data Size (MB) by Database — top 15", build:(rows)=>topNBarChart(rows,"Database Name","Replicated Data Size (MB)",15,"GB",1024)},
+      {title:"BI Used vs Unused Tables", build:(rows)=>pairDonut(rows,"BI Used Tables","BI Unused Tables")}
+    ]
   },
   tables:{
     sheetCode:"03", headerRow:0,
-    title:"Tables", sub:"Every SAP table replicated, with BI usage classification and size",
+    title:"Tables", sub:"Every replicated SAP table with its BI usage classification and size",
     dbKey:"Database Name",
     defaultSort:{key:"Total Size (MB)", dir:"desc"},
-    searchable:["Database Name","Table Name","Primary Key Columns"],
-    localFilters:[
-      {key:"Usage Classification", label:"Usage"},
-      {key:"BI Used?", label:"BI Used?"}
-    ],
+    searchable:["Database Name","Table Name","Primary Key Columns","Usage Classification"],
     columns:[
-      {key:"Database Name", label:"Database", type:"text"},
-      {key:"Table Name", label:"Table", type:"text"},
-      {key:"BI Used?", label:"BI Used?", type:"badge", colorMap:{"Yes":"good","No":"muted"}},
-      {key:"Usage Classification", label:"Usage", type:"badge", colorMap:{"NOT USED":"bad","LOW USAGE":"warn","MEDIUM USAGE":"accent","HIGH USAGE":"good"}},
-      {key:"Available Columns (SAP)", label:"Avail. Cols", type:"int"},
-      {key:"Used Columns", label:"Used Cols", type:"int"},
-      {key:"Unused Columns", label:"Unused Cols", type:"int"},
-      {key:"Column Usage %", label:"Col Usage %", type:"pct"},
-      {key:"Referencing SPs", label:"Ref. SPs", type:"int"},
-      {key:"Referencing Views", label:"Ref. Views", type:"int"},
-      {key:"BI Objects Referencing", label:"BI Objects", type:"int"},
-      {key:"Total Reference Count", label:"Total Refs", type:"int"},
-      {key:"Row Count", label:"Rows", type:"int"},
-      {key:"Data Size (MB)", label:"Data Size", type:"size"},
-      {key:"Index Size (MB)", label:"Index Size", type:"size"},
-      {key:"Total Size (MB)", label:"Total Size", type:"size"},
-      {key:"Index Count", label:"Indexes", type:"int"},
-      {key:"Primary Key Columns", label:"Primary Key", type:"text"},
-      {key:"Optimization Priority Score", label:"Opt. Score", type:"num1"}
+      {key:"Database Name", type:"text"},
+      {key:"Table Name", type:"text"},
+      {key:"BI Used?", type:"badge", colorMap:{"Yes":"good","No":"muted"}},
+      {key:"Usage Classification", type:"badge", colorMap:{"NOT USED":"bad","LOW USAGE":"warn","MEDIUM USAGE":"accent","HIGH USAGE":"good"}},
+      {key:"Available Columns (SAP)", type:"int"},
+      {key:"Used Columns", type:"int"},
+      {key:"Unused Columns", type:"int"},
+      {key:"Column Usage %", type:"pct"},
+      {key:"Referencing SPs", type:"int"},
+      {key:"Referencing Views", type:"int"},
+      {key:"BI Objects Referencing", type:"int"},
+      {key:"Total Reference Count", type:"int"},
+      {key:"Row Count", type:"int"},
+      {key:"Data Size (MB)", type:"size"},
+      {key:"Index Size (MB)", type:"size"},
+      {key:"Total Size (MB)", type:"size"},
+      {key:"Index Count", type:"int"},
+      {key:"Primary Key Columns", type:"text"},
+      {key:"Optimization Priority Score", type:"num1"}
     ],
     kpis:(rows)=>{
       const used = rows.filter(r=>String(r["BI Used?"]).trim().toLowerCase()==="yes").length;
       return [
-        {label:"Tables (filtered)", value:fmtInt(rows.length)},
+        {label:"Tables", value:fmtInt(rows.length)},
         {label:"BI Used", value:fmtInt(used)+" ("+fmtPct(rows.length?used/rows.length*100:0)+")"},
+        {label:"Not BI Used", value:fmtInt(rows.length-used)},
         {label:"Total Rows", value:fmtInt(sumBy(rows,"Row Count"))},
         {label:"Total Size", value:fmtSize(sumBy(rows,"Total Size (MB)"))},
-        {label:"Avg Opt. Priority", value:fmtNum1(avgBy(rows,"Optimization Priority Score"))}
+        {label:"Avg Optimization Score", value:fmtNum1(avgBy(rows,"Optimization Priority Score"))}
       ];
     },
-    charts:[{title:"Top 15 Tables by Total Size", build:(rows)=>topNBarChart(rows,"Table Name","Total Size (MB)",15,"GB",1024)}]
+    charts:[
+      {title:"Total Size (MB) — top 15 tables", build:(rows)=>topNBarChart(rows,"Table Name","Total Size (MB)",15,"GB",1024)},
+      {title:"Tables by Usage Classification", build:(rows)=>countByChart(rows,"Usage Classification")}
+    ]
   },
   columns:{
     sheetCode:"04", headerRow:0,
-    title:"Columns", sub:"Column-level catalog with data types, keys, and BI usage counts",
+    title:"Columns", sub:"Column catalogue with data types, keys and BI usage counts",
     dbKey:"Database Name",
     defaultSort:{key:"Usage Count", dir:"desc"},
     searchable:["Database Name","Table Name","Column Name","Data Type"],
-    localFilters:[
-      {key:"BI Used?", label:"BI Used?"},
-      {key:"Data Type", label:"Data Type"}
-    ],
     columns:[
-      {key:"Database Name", label:"Database", type:"text"},
-      {key:"Table Name", label:"Table", type:"text"},
-      {key:"Column Name", label:"Column", type:"text"},
-      {key:"BI Used?", label:"BI Used?", type:"badge", colorMap:{"Yes":"good","No":"muted"}},
-      {key:"Data Type", label:"Data Type", type:"text"},
-      {key:"Max Length", label:"Max Len", type:"int"},
-      {key:"Precision", label:"Precision", type:"int"},
-      {key:"Scale", label:"Scale", type:"int"},
-      {key:"Is Nullable", label:"Nullable", type:"text"},
-      {key:"Column Position", label:"Position", type:"int"},
-      {key:"Is Primary Key", label:"PK", type:"text"},
-      {key:"Usage Count", label:"Usage Count", type:"int"},
-      {key:"Usage Types (SELECT / WHERE / JOIN / etc.)", label:"Usage Types", type:"text"},
-      {key:"Top BI Consumers (up to 15)", label:"Top BI Consumers", type:"text"}
+      {key:"Database Name", type:"text"},
+      {key:"Table Name", type:"text"},
+      {key:"Column Name", type:"text"},
+      {key:"BI Used?", type:"badge", colorMap:{"Yes":"good","No":"muted"}},
+      {key:"Data Type", type:"text"},
+      {key:"Max Length", type:"int"},
+      {key:"Precision", type:"int"},
+      {key:"Scale", type:"int"},
+      {key:"Is Nullable", type:"text"},
+      {key:"Column Position", type:"int"},
+      {key:"Is Primary Key", type:"text"},
+      {key:"Usage Count", type:"int"},
+      {key:"Usage Types (SELECT / WHERE / JOIN / etc.)", type:"text"},
+      {key:"Top BI Consumers (up to 15)", type:"text"}
     ],
     kpis:(rows)=>{
       const used = rows.filter(r=>String(r["BI Used?"]).trim().toLowerCase()==="yes").length;
       return [
-        {label:"Columns (filtered)", value:fmtInt(rows.length)},
+        {label:"Columns", value:fmtInt(rows.length)},
         {label:"BI Used", value:fmtInt(used)+" ("+fmtPct(rows.length?used/rows.length*100:0)+")"},
         {label:"Unused", value:fmtInt(rows.length-used)},
+        {label:"Primary Key Columns", value:fmtInt(rows.filter(r=>String(r["Is Primary Key"]).toLowerCase()==="true").length)},
         {label:"Total Usage Count", value:fmtInt(sumBy(rows,"Usage Count"))}
       ];
     },
-    charts:[{title:"Top 15 Columns by Usage Count", build:(rows)=>topNBarChart(rows,r=>r["Table Name"]+"."+r["Column Name"],"Usage Count",15,"",1)}]
+    charts:[
+      {title:"Usage Count — top 15 columns", build:(rows)=>topNBarChart(rows,r=>r["Table Name"]+"."+r["Column Name"],"Usage Count",15,"",1)},
+      {title:"Columns by BI Used?", build:(rows)=>countByChart(rows,"BI Used?")}
+    ]
   },
   sps:{
     sheetCode:"05", headerRow:0,
-    title:"Stored Procedures", sub:"BI stored procedures and their dependency complexity on SAP tables",
+    title:"Stored Procedures", sub:"BI stored procedures and their dependency complexity on SAP data",
     dbKey:null,
     defaultSort:{key:"ComplexityScore", dir:"desc"},
-    searchable:["SPName"],
-    localFilters:[
-      {key:"UsesSAP", label:"Uses SAP?"},
-      {key:"DependencyComplexity", label:"Complexity"}
-    ],
+    searchable:["SPName","DependencyComplexity"],
     columns:[
-      {key:"SPName", label:"Stored Procedure", type:"text"},
-      {key:"UsesSAP", label:"Uses SAP?", type:"badge", colorMap:{"YES":"good","NO":"muted"}},
-      {key:"SAPTablesCount", label:"SAP Tables", type:"int"},
-      {key:"SAPColumnsCount", label:"SAP Columns", type:"int"},
-      {key:"DirectDependencies", label:"Direct Deps", type:"int"},
-      {key:"IndirectDependencies", label:"Indirect Deps", type:"int"},
-      {key:"ViewsUsed", label:"Views Used", type:"int"},
-      {key:"HasDynamicSQL", label:"Dynamic SQL", type:"badge", colorMap:{"YES":"warn","NO":"muted"}},
-      {key:"ComplexityScore", label:"Complexity Score", type:"int"},
-      {key:"DependencyComplexity", label:"Complexity", type:"badge", colorMap:{"Very High":"bad","High":"warn","Medium":"accent","Low":"good"}}
+      {key:"SPName", type:"text"},
+      {key:"UsesSAP", type:"badge", colorMap:{"YES":"good","NO":"muted"}},
+      {key:"SAPTablesCount", type:"int"},
+      {key:"SAPColumnsCount", type:"int"},
+      {key:"DirectDependencies", type:"int"},
+      {key:"IndirectDependencies", type:"int"},
+      {key:"ViewsUsed", type:"int"},
+      {key:"HasDynamicSQL", type:"badge", colorMap:{"YES":"warn","NO":"muted"}},
+      {key:"ComplexityScore", type:"int"},
+      {key:"DependencyComplexity", type:"badge", colorMap:{"Very High":"bad","High":"warn","Medium":"accent","Low":"good"}}
     ],
     kpis:(rows)=>{
       const usesSap = rows.filter(r=>String(r.UsesSAP).trim().toUpperCase()==="YES").length;
       return [
         {label:"Stored Procedures", value:fmtInt(rows.length)},
         {label:"Uses SAP Data", value:fmtInt(usesSap)+" ("+fmtPct(rows.length?usesSap/rows.length*100:0)+")"},
-        {label:"Avg Complexity Score", value:fmtNum1(avgBy(rows,"ComplexityScore"))},
-        {label:"Max SAP Tables Touched", value:fmtInt(maxBy(rows,"SAPTablesCount"))}
+        {label:"No SAP Dependency", value:fmtInt(rows.length-usesSap)},
+        {label:"Has Dynamic SQL", value:fmtInt(rows.filter(r=>String(r.HasDynamicSQL).toUpperCase()==="YES").length)},
+        {label:"Avg Complexity Score", value:fmtNum1(avgBy(rows,"ComplexityScore"))}
       ];
     },
-    charts:[{title:"Top 15 SPs by Complexity Score", build:(rows)=>topNBarChart(rows,"SPName","ComplexityScore",15,"",1)}]
+    charts:[
+      {title:"ComplexityScore — top 15 procedures", build:(rows)=>topNBarChart(rows,"SPName","ComplexityScore",15,"",1)},
+      {title:"Procedures by DependencyComplexity", build:(rows)=>countByChart(rows,"DependencyComplexity")}
+    ]
   },
   splineage:{
     sheetCode:"06", headerRow:1, noteRow:0,
-    title:"SP → Table Lineage", sub:"Which SAP tables each stored procedure depends on, direct or via views",
+    title:"SP → Table Lineage", sub:"Which SAP tables each stored procedure depends on, directly or through views",
     dbKey:"SAPDatabase",
     defaultSort:{key:"SPName", dir:"asc"},
     searchable:["SPName","SAPTable","SchemaName","DependencyPath"],
-    localFilters:[{key:"DependencyType", label:"Dependency"}],
     columns:[
-      {key:"SPName", label:"Stored Procedure", type:"text"},
-      {key:"SAPDatabase", label:"SAP Database", type:"text"},
-      {key:"SchemaName", label:"Schema", type:"text"},
-      {key:"SAPTable", label:"SAP Table", type:"text"},
-      {key:"DependencyType", label:"Type", type:"badge", colorMap:{"Direct":"good","Indirect":"accent"}},
-      {key:"IntermediateView", label:"Via View", type:"text"},
-      {key:"DependencyPath", label:"Dependency Path", type:"text"},
-      {key:"DependencyLevel", label:"Level", type:"int"}
+      {key:"SPName", type:"text"},
+      {key:"SAPDatabase", type:"text"},
+      {key:"SchemaName", type:"text"},
+      {key:"SAPTable", type:"text"},
+      {key:"DependencyType", type:"badge", colorMap:{"Direct":"good","Indirect":"accent"}},
+      {key:"IntermediateView", type:"text"},
+      {key:"DependencyPath", type:"text"},
+      {key:"DependencyLevel", type:"int"}
     ],
     kpis:(rows)=>[
       {label:"Dependency Rows", value:fmtInt(rows.length)},
       {label:"Distinct SPs", value:fmtInt(distinctCount(rows,"SPName"))},
       {label:"Distinct SAP Tables", value:fmtInt(distinctCount(rows,"SAPTable"))},
-      {label:"Direct Links", value:fmtInt(rows.filter(r=>r.DependencyType==="Direct").length)}
+      {label:"Direct", value:fmtInt(rows.filter(r=>r.DependencyType==="Direct").length)},
+      {label:"Indirect", value:fmtInt(rows.filter(r=>r.DependencyType==="Indirect").length)}
     ],
-    charts:[{title:"Rows by Dependency Type", build:(rows)=>countByChart(rows,"DependencyType")}]
+    charts:[
+      {title:"Rows by DependencyType", build:(rows)=>countByChart(rows,"DependencyType")},
+      {title:"SAP tables touched — top 15 procedures", build:(rows)=>countTopNChart(rows,"SPName",15)}
+    ]
   },
   viewlineage:{
     sheetCode:"07", headerRow:1, noteRow:0,
-    title:"View Lineage", sub:"BI views traced back to the SAP tables and columns they read",
+    title:"View Lineage", sub:"BI views traced back to the SAP objects and columns they read",
     dbKey:"SAPDatabase",
     defaultSort:{key:"ViewName", dir:"asc"},
     searchable:["ViewName","ReferencedObject","SAPSchemaOrRefSchema","SAPColumns"],
-    localFilters:[{key:"ReferenceCategory", label:"Category"}],
     columns:[
-      {key:"ViewName", label:"View", type:"text"},
-      {key:"ParentObjects", label:"Used By (SPs)", type:"text"},
-      {key:"SAPDatabase", label:"SAP Database", type:"text"},
-      {key:"SAPSchemaOrRefSchema", label:"Schema", type:"text"},
-      {key:"ReferencedObject", label:"Referenced Object", type:"text"},
-      {key:"SAPColumns", label:"SAP Columns", type:"text"},
-      {key:"DependencyLevel", label:"Level", type:"int"},
-      {key:"IsFurtherNestedView", label:"Further Nested?", type:"text"},
-      {key:"ReferenceCategory", label:"Category", type:"badge", colorMap:{"SAP":"accent"}}
+      {key:"ViewName", type:"text"},
+      {key:"ParentObjects", type:"text"},
+      {key:"SAPDatabase", type:"text"},
+      {key:"SAPSchemaOrRefSchema", type:"text"},
+      {key:"ReferencedObject", type:"text"},
+      {key:"SAPColumns", type:"text"},
+      {key:"DependencyLevel", type:"int"},
+      {key:"IsFurtherNestedView", type:"text"},
+      {key:"ReferenceCategory", type:"badge", colorMap:{"SAP":"accent"}}
     ],
     kpis:(rows)=>[
       {label:"Lineage Rows", value:fmtInt(rows.length)},
       {label:"Distinct Views", value:fmtInt(distinctCount(rows,"ViewName"))},
-      {label:"Distinct SAP Objects", value:fmtInt(distinctCount(rows,"ReferencedObject"))}
+      {label:"Distinct SAP Objects", value:fmtInt(distinctCount(rows,"ReferencedObject"))},
+      {label:"Databases Referenced", value:fmtInt(distinctCount(rows,"SAPDatabase"))}
     ],
-    charts:[{title:"Rows by Reference Category", build:(rows)=>countByChart(rows,"ReferenceCategory")}]
+    charts:[
+      {title:"Rows by ReferenceCategory", build:(rows)=>countByChart(rows,"ReferenceCategory")},
+      {title:"References — top 15 views", build:(rows)=>countTopNChart(rows,"ViewName",15)}
+    ]
   },
   unused:{
     sheetCode:"08", headerRow:0,
-    title:"Unused Tables", sub:"SAP tables replicated but not referenced anywhere in BI",
+    title:"Unused Tables", sub:"Tables replicated but never referenced anywhere in BI",
     dbKey:"DatabaseName",
     defaultSort:{key:"TotalSizeMB", dir:"desc"},
     searchable:["DatabaseName","TableName","SchemaName"],
     columns:[
-      {key:"DatabaseName", label:"Database", type:"text"},
-      {key:"SchemaName", label:"Schema", type:"text"},
-      {key:"TableName", label:"Table", type:"text"},
-      {key:"ColumnCount", label:"Columns", type:"int"},
-      {key:"TotalSizeMB", label:"Total Size", type:"size"},
-      {key:"TableRowCount", label:"Rows", type:"int"}
+      {key:"DatabaseName", type:"text"},
+      {key:"SchemaName", type:"text"},
+      {key:"TableName", type:"text"},
+      {key:"ColumnCount", type:"int"},
+      {key:"TotalSizeMB", type:"size"},
+      {key:"TableRowCount", type:"int"}
     ],
     kpis:(rows)=>[
       {label:"Unused Tables", value:fmtInt(rows.length)},
       {label:"Reclaimable Storage", value:fmtSize(sumBy(rows,"TotalSizeMB"))},
-      {label:"Total Rows (unused)", value:fmtInt(sumBy(rows,"TableRowCount"))},
+      {label:"Rows Held", value:fmtInt(sumBy(rows,"TableRowCount"))},
+      {label:"Columns Held", value:fmtInt(sumBy(rows,"ColumnCount"))},
       {label:"Databases Affected", value:fmtInt(distinctCount(rows,"DatabaseName"))}
     ],
-    charts:[{title:"Top 15 Unused Tables by Size", build:(rows)=>topNBarChart(rows,"TableName","TotalSizeMB",15,"GB",1024)}]
+    charts:[
+      {title:"TotalSizeMB — top 15 unused tables", build:(rows)=>topNBarChart(rows,"TableName","TotalSizeMB",15,"GB",1024)},
+      {title:"Unused storage by database", build:(rows)=>sumByDonut(rows,"DatabaseName","TotalSizeMB",10)}
+    ]
   },
   insights:{
     sheetCode:"09", headerRow:1, noteRow:0,
-    title:"Top Insights", sub:"The 50 largest tables in the replica, storage & BI-usage side by side",
+    title:"Top Insights", sub:"The 50 largest tables in the replica, storage against BI usage",
     dbKey:"DatabaseName",
     defaultSort:{key:"TotalSizeMB", dir:"desc"},
     searchable:["DatabaseName","TableName","SchemaName"],
-    localFilters:[{key:"BIUsed", label:"BI Used?"}],
     columns:[
-      {key:"DatabaseName", label:"Database", type:"text"},
-      {key:"SchemaName", label:"Schema", type:"text"},
-      {key:"TableName", label:"Table", type:"text"},
-      {key:"TableRowCount", label:"Rows", type:"int"},
-      {key:"DataSizeMB", label:"Data Size", type:"size"},
-      {key:"IndexSizeMB", label:"Index Size", type:"size"},
-      {key:"TotalSizeMB", label:"Total Size", type:"size"},
-      {key:"BIUsed", label:"BI Used?", type:"badge", colorMap:{"YES":"good","NO":"bad"}},
-      {key:"UsedColumns", label:"Used Cols", type:"int"},
-      {key:"AvailableColumns", label:"Avail. Cols", type:"int"}
+      {key:"DatabaseName", type:"text"},
+      {key:"SchemaName", type:"text"},
+      {key:"TableName", type:"text"},
+      {key:"TableRowCount", type:"int"},
+      {key:"DataSizeMB", type:"size"},
+      {key:"IndexSizeMB", type:"size"},
+      {key:"TotalSizeMB", type:"size"},
+      {key:"BIUsed", type:"badge", colorMap:{"YES":"good","NO":"bad"}},
+      {key:"UsedColumns", type:"int"},
+      {key:"AvailableColumns", type:"int"}
     ],
     kpis:(rows)=>[
       {label:"Tables Listed", value:fmtInt(rows.length)},
       {label:"Combined Size", value:fmtSize(sumBy(rows,"TotalSizeMB"))},
       {label:"BI Used", value:fmtInt(rows.filter(r=>String(r.BIUsed).toUpperCase()==="YES").length)},
-      {label:"Not BI Used", value:fmtInt(rows.filter(r=>String(r.BIUsed).toUpperCase()==="NO").length)}
+      {label:"Not BI Used", value:fmtInt(rows.filter(r=>String(r.BIUsed).toUpperCase()==="NO").length)},
+      {label:"Rows Held", value:fmtInt(sumBy(rows,"TableRowCount"))}
     ],
-    charts:[{title:"Top 15 by Total Size", build:(rows)=>topNBarChart(rows,"TableName","TotalSizeMB",15,"GB",1024)}]
+    charts:[
+      {title:"TotalSizeMB — top 15", build:(rows)=>topNBarChart(rows,"TableName","TotalSizeMB",15,"GB",1024)},
+      {title:"Storage split by BIUsed", build:(rows)=>sumByDonut(rows,"BIUsed","TotalSizeMB",5)}
+    ]
   },
   insTables:{
     sheetCode:"10", headerRow:2, noteRow:0,
-    title:"Insertion Trends (Tables)", sub:"Approximate daily insert/update volume, sampled from each table's busiest month",
+    title:"Insertion Trends (Tables)", sub:"Approximate daily insert / update volume sampled from each table's busiest month",
     dbKey:"Database Name",
     defaultSort:{key:"Avg Inserts Per Day (approx)", dir:"desc"},
-    searchable:["Database Name","Table Name"],
-    localFilters:[{key:"Status / Note", label:"Status"}],
+    searchable:["Database Name","Table Name","Status / Note"],
     columns:[
-      {key:"Database Name", label:"Database", type:"text"},
-      {key:"Table Name", label:"Table", type:"text"},
-      {key:"Total Row Count", label:"Total Rows", type:"int"},
-      {key:"Busiest Month (Insert/CreateDate)", label:"Busiest Month (Insert)", type:"text"},
-      {key:"Highest Inserts In A Day", label:"Max Inserts/Day", type:"int"},
-      {key:"Lowest Inserts In A Day", label:"Min Inserts/Day", type:"int"},
-      {key:"Avg Inserts Per Day (approx)", label:"Avg Inserts/Day", type:"num1"},
-      {key:"Avg Inserts Per Day % of Total Rows", label:"Avg Insert % / Day", type:"pctsmall"},
-      {key:"Busiest Month (Update)", label:"Busiest Month (Update)", type:"text"},
-      {key:"Highest Updates In A Day", label:"Max Updates/Day", type:"int"},
-      {key:"Lowest Updates In A Day", label:"Min Updates/Day", type:"int"},
-      {key:"Avg Updates Per Day (approx)", label:"Avg Updates/Day", type:"num1"},
-      {key:"Avg Updates Per Day % of Total Rows", label:"Avg Update % / Day", type:"pctsmall"},
-      {key:"Status / Note", label:"Status", type:"badge", colorMap:{"OK":"good"}}
+      {key:"Database Name", type:"text"},
+      {key:"Table Name", type:"text"},
+      {key:"Total Row Count", type:"int"},
+      {key:"Busiest Month (Insert/CreateDate)", type:"text"},
+      {key:"Highest Inserts In A Day", type:"int"},
+      {key:"Lowest Inserts In A Day", type:"int"},
+      {key:"Avg Inserts Per Day (approx)", type:"num1"},
+      {key:"Avg Inserts Per Day % of Total Rows", type:"pctsmall"},
+      {key:"Busiest Month (Update)", type:"text"},
+      {key:"Highest Updates In A Day", type:"int"},
+      {key:"Lowest Updates In A Day", type:"int"},
+      {key:"Avg Updates Per Day (approx)", type:"num1"},
+      {key:"Avg Updates Per Day % of Total Rows", type:"pctsmall"},
+      {key:"Status / Note", type:"badge", colorMap:{"OK":"good"}}
     ],
     kpis:(rows)=>[
       {label:"Tables Sampled", value:fmtInt(rows.length)},
-      {label:"Sum Avg Inserts/Day", value:fmtInt(sumBy(rows,"Avg Inserts Per Day (approx)"))},
-      {label:"Sum Avg Updates/Day", value:fmtInt(sumBy(rows,"Avg Updates Per Day (approx)"))}
+      {label:"Rows Covered", value:fmtInt(sumBy(rows,"Total Row Count"))},
+      {label:"Avg Inserts / Day", value:fmtInt(sumBy(rows,"Avg Inserts Per Day (approx)"))},
+      {label:"Avg Updates / Day", value:fmtInt(sumBy(rows,"Avg Updates Per Day (approx)"))},
+      {label:"Databases Covered", value:fmtInt(distinctCount(rows,"Database Name"))}
     ],
-    charts:[{title:"Top 15 Tables by Avg Inserts/Day", build:(rows)=>topNBarChart(rows,"Table Name","Avg Inserts Per Day (approx)",15,"",1)}]
+    charts:[
+      {title:"Avg Inserts Per Day (approx) — top 15", build:(rows)=>topNBarChart(rows,"Table Name","Avg Inserts Per Day (approx)",15,"",1)},
+      {title:"Avg inserts per day by database", build:(rows)=>sumByDonut(rows,"Database Name","Avg Inserts Per Day (approx)",10)}
+    ]
   },
   insDb:{
     sheetCode:"11", headerRow:2, noteRow:0,
-    title:"Insertion Trends (Databases)", sub:"Sampled-table insert/update volume rolled up per database",
+    title:"Insertion Trends (Databases)", sub:"Sampled-table insert / update volume rolled up per database",
     dbKey:"Database Name",
     defaultSort:{key:"Sum of Avg Manipulation/Day (sampled tables)", dir:"desc"},
     searchable:["Database Name"],
     columns:[
-      {key:"Database Name", label:"Database", type:"text"},
-      {key:"Tables Sampled In This DB", label:"Tables Sampled", type:"int"},
-      {key:"Tables With Measurable Insertion Data", label:"With Data", type:"int"},
-      {key:"Sum of Avg Inserts/Day (sampled tables)", label:"Avg Inserts/Day", type:"num1"},
-      {key:"Sum of Avg Updates/Day (sampled tables)", label:"Avg Updates/Day", type:"num1"},
-      {key:"Sum of Avg Manipulation/Day (sampled tables)", label:"Avg Manipulation/Day", type:"num1"}
+      {key:"Database Name", type:"text"},
+      {key:"Tables Sampled In This DB", type:"int"},
+      {key:"Tables With Measurable Insertion Data", type:"int"},
+      {key:"Sum of Avg Inserts/Day (sampled tables)", type:"num1"},
+      {key:"Sum of Avg Updates/Day (sampled tables)", type:"num1"},
+      {key:"Sum of Avg Manipulation/Day (sampled tables)", type:"num1"}
     ],
     kpis:(rows)=>[
       {label:"Databases", value:fmtInt(rows.length)},
-      {label:"Total Avg Manipulation/Day", value:fmtInt(sumBy(rows,"Sum of Avg Manipulation/Day (sampled tables)"))}
+      {label:"Tables Sampled", value:fmtInt(sumBy(rows,"Tables Sampled In This DB"))},
+      {label:"Avg Inserts / Day", value:fmtInt(sumBy(rows,"Sum of Avg Inserts/Day (sampled tables)"))},
+      {label:"Avg Updates / Day", value:fmtInt(sumBy(rows,"Sum of Avg Updates/Day (sampled tables)"))},
+      {label:"Avg Manipulation / Day", value:fmtInt(sumBy(rows,"Sum of Avg Manipulation/Day (sampled tables)"))}
     ],
-    charts:[{title:"Avg Manipulation/Day by Database", build:(rows)=>topNBarChart(rows,"Database Name","Sum of Avg Manipulation/Day (sampled tables)",20,"",1)}]
+    charts:[
+      {title:"Sum of Avg Manipulation/Day (sampled tables)", build:(rows)=>topNBarChart(rows,"Database Name","Sum of Avg Manipulation/Day (sampled tables)",20,"",1)},
+      {title:"Manipulation share by database", build:(rows)=>sumByDonut(rows,"Database Name","Sum of Avg Manipulation/Day (sampled tables)",10)}
+    ]
   }
 };
+
+/* Which section's table is shown on each page (Overview hosts the Databases table). */
+function tableSectionOf(navId){ return navId==="overview" ? "databases" : navId; }
+
+/* Overview KPI grouping — the source sheet emits one flat list of metrics. */
+const OVERVIEW_GROUPS = [
+  {title:"Replication Scale", match:["Total DBs","Total Tables","Total Columns","Total Rows"]},
+  {title:"Storage",           match:["Total Replicated Storage","Total Data Size","Total Index Size","BI Used Storage","Top-91"]},
+  {title:"BI Usage",          match:["BI-Used Tables","BI-Used Columns","Total used Rows","BI Used Tables"]},
+  {title:"Stored Procedures", match:["Total Stored Procedures","SAP-Linked","SAP-Non-Linked"]}
+];
 
 /* ---------------------------------------------------------------------- *
  * State                                                                  *
  * ---------------------------------------------------------------------- */
 const STATE = {
-  loaded:false,
-  fileName:"",
-  loadedAt:null,
-  data:{},          // sectionId -> {rows:[...], note:string|null}
-  overview:null,    // special parsed structure for sheet 01
-  dbUniverse:[],    // union of DB names across sheets that carry a DB column
-  globalDb:new Set(),
-  current:"overview",
-  sections:{}       // sectionId -> {search, local:{}, sort:{key,dir}, page, pageSize}
+  loaded:false, fileName:"", generated:"", loadedAt:null,
+  data:{}, overview:null, dbUniverse:[], globalDb:new Set(),
+  current:"overview", sections:{}
 };
-let ACTIVE_CHARTS = [];
+let SECTION_CHARTS = [];
+let OVERVIEW_CHARTS = [];
 
 /* ---------------------------------------------------------------------- *
- * Formatting helpers                                                     *
+ * Formatting                                                             *
  * ---------------------------------------------------------------------- */
-function escapeHtml(s){
-  return String(s).replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
-}
+function escapeHtml(s){ return String(s).replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c])); }
 function toNum(v){ if(v===""||v==null) return NaN; const n=Number(v); return isNaN(n)?NaN:n; }
 function fmtInt(v){ const n=toNum(v); return isNaN(n)?"—":Math.round(n).toLocaleString(); }
 function fmtNum1(v){ const n=toNum(v); return isNaN(n)?"—":n.toFixed(1); }
 function fmtPct(v){ const n=toNum(v); return isNaN(n)?"—":n.toFixed(2)+"%"; }
-function fmtPctSmall(v){ const n=toNum(v); if(isNaN(n)) return "—"; return (Math.abs(n)<0.01&&n!==0? n.toFixed(4): n.toFixed(2))+"%"; }
+function fmtPctSmall(v){ const n=toNum(v); if(isNaN(n)) return "—"; return (Math.abs(n)<0.01&&n!==0?n.toFixed(4):n.toFixed(2))+"%"; }
 function fmtSize(mb){
   const n=toNum(mb); if(isNaN(n)) return "—";
-  const abs=Math.abs(n);
-  if(abs>=1024*1024) return (n/1024/1024).toFixed(2)+" TB";
-  if(abs>=1024) return (n/1024).toFixed(2)+" GB";
-  if(abs>=1) return n.toFixed(2)+" MB";
+  const a=Math.abs(n);
+  if(a>=1048576) return (n/1048576).toFixed(2)+" TB";
+  if(a>=1024) return (n/1024).toFixed(2)+" GB";
+  if(a>=1) return n.toFixed(2)+" MB";
   return (n*1024).toFixed(1)+" KB";
 }
+function isNumericType(t){ return t==="int"||t==="num1"||t==="size"; }
 function fmtCell(col,val){
   if(val===""||val==null) return "—";
   switch(col.type){
@@ -522,710 +547,666 @@ function fmtCell(col,val){
     case "pct": return fmtPct(val);
     case "pctsmall": return fmtPctSmall(val);
     case "size": return fmtSize(val);
-    case "badge": return badgeHtml(val, col.colorMap);
+    case "badge": return badgeHtml(val,col.colorMap);
     default: return escapeHtml(val);
   }
 }
-function badgeHtml(value, colorMap){
+function badgeHtml(value,colorMap){
   const key=String(value).trim();
   if(!key) return "—";
   let cls="neutral";
-  if(colorMap){
-    const found=Object.keys(colorMap).find(k=>k.toLowerCase()===key.toLowerCase());
-    if(found) cls=colorMap[found];
-  }
+  if(colorMap){ const f=Object.keys(colorMap).find(k=>k.toLowerCase()===key.toLowerCase()); if(f) cls=colorMap[f]; }
   return '<span class="badge b-'+cls+'">'+escapeHtml(key)+'</span>';
 }
 function sumBy(rows,key){ let s=0; for(const r of rows){ const n=toNum(r[key]); if(!isNaN(n)) s+=n; } return s; }
-function avgBy(rows,key){ let s=0,c=0; for(const r of rows){ const n=toNum(r[key]); if(!isNaN(n)){ s+=n; c++; } } return c?s/c:0; }
-function maxBy(rows,key){ let m=null; for(const r of rows){ const n=toNum(r[key]); if(!isNaN(n) && (m===null||n>m)) m=n; } return m||0; }
+function avgBy(rows,key){ let s=0,c=0; for(const r of rows){ const n=toNum(r[key]); if(!isNaN(n)){s+=n;c++;} } return c?s/c:0; }
 function distinctCount(rows,key){ return new Set(rows.map(r=>r[key])).size; }
 
 /* ---------------------------------------------------------------------- *
- * Workbook parsing                                                       *
+ * Workbook parsing — kept because the data-regeneration step (see the     *
+ * report-generator skill) reuses these against a raw .xlsx.               *
  * ---------------------------------------------------------------------- */
-function findSheet(wb, code){
-  const exact = wb.SheetNames.find(n=>n.startsWith(code+"_"));
-  if(exact) return exact;
-  return wb.SheetNames.find(n=>n.indexOf(code)===0) || null;
-}
-/* Some sheets in this workbook carry a !ref range that under-reports the real used
-   area, and sheet_to_json trusts !ref — rebuild it from the actual cell addresses. */
 function fixSheetRange(ws){
   if(!ws) return ws;
-  let maxR=-1, maxC=-1, any=false;
+  let maxR=-1,maxC=-1,any=false;
   for(const addr in ws){
     if(addr[0]==="!") continue;
-    const cell = XLSX.utils.decode_cell(addr);
-    if(cell.r>maxR) maxR=cell.r;
-    if(cell.c>maxC) maxC=cell.c;
-    any=true;
+    const c=XLSX.utils.decode_cell(addr);
+    if(c.r>maxR)maxR=c.r; if(c.c>maxC)maxC=c.c; any=true;
   }
-  if(any) ws["!ref"] = XLSX.utils.encode_range({s:{r:0,c:0}, e:{r:maxR, c:maxC}});
+  if(any) ws["!ref"]=XLSX.utils.encode_range({s:{r:0,c:0},e:{r:maxR,c:maxC}});
   return ws;
 }
-function sheetToAoa(wb, name){
-  const ws = fixSheetRange(wb.Sheets[name]);
-  return XLSX.utils.sheet_to_json(ws, {header:1, raw:true, defval:""});
-}
-function aoaToObjects(aoa, headerRowIdx){
-  const headerRow = aoa[headerRowIdx] || [];
-  const headers = headerRow.map(h=>String(h).trim());
-  const rows=[];
-  for(let i=headerRowIdx+1;i<aoa.length;i++){
-    const r=aoa[i];
-    if(!r || r.every(v=>v===""||v==null)) continue;
-    const obj={};
-    let any=false;
-    headers.forEach((h,ci)=>{
-      if(!h) return;
-      const v = r[ci]!==undefined?r[ci]:"";
-      obj[h]=v;
-      if(v!=="") any=true;
-    });
-    if(any) rows.push(obj);
-  }
-  return rows;
-}
-/* The dashboard sheet is a hand-laid-out executive summary: KPI label/value row pairs at
-   the top, then several small two-column tables sitting side by side further down. Blocks
-   are located by their own heading text rather than fixed cell coordinates, so the parse
-   survives rows or columns being inserted upstream. */
+function findSheet(wb,code){ return wb.SheetNames.find(n=>n.startsWith(code+"_")) || wb.SheetNames.find(n=>n.indexOf(code)===0) || null; }
+function sheetToAoa(wb,name){ return XLSX.utils.sheet_to_json(fixSheetRange(wb.Sheets[name]),{header:1,raw:true,defval:""}); }
 function overviewCell(aoa,r,c){ const row=aoa[r]; const v=row?row[c]:""; return v==null?"":v; }
 function overviewText(aoa,r,c){ return String(overviewCell(aoa,r,c)).trim(); }
-
-function findAnchor(aoa, label, rightLabel){
+function findAnchor(aoa,label,rightLabel){
   for(let r=0;r<aoa.length;r++){
-    const row = aoa[r]||[];
+    const row=aoa[r]||[];
     for(let c=0;c<row.length;c++){
-      if(overviewText(aoa,r,c).toLowerCase()===label.toLowerCase()
-        && overviewText(aoa,r,c+1).toLowerCase()===rightLabel.toLowerCase()) return {r,c};
+      if(overviewText(aoa,r,c).toLowerCase()===label.toLowerCase() && overviewText(aoa,r,c+1).toLowerCase()===rightLabel.toLowerCase()) return {r,c};
     }
   }
   return null;
 }
-function readAnchoredPairs(aoa, anchor, maxRows){
+function readAnchoredPairs(aoa,anchor,maxRows){
   const out=[];
   if(!anchor) return out;
-  for(let r=anchor.r+1; r<aoa.length && out.length<maxRows; r++){
-    const label = overviewText(aoa,r,anchor.c);
+  for(let r=anchor.r+1;r<aoa.length&&out.length<maxRows;r++){
+    const label=overviewText(aoa,r,anchor.c);
     if(label==="") break;
-    out.push({label, value: toNum(overviewCell(aoa,r,anchor.c+1))});
+    out.push({label,value:toNum(overviewCell(aoa,r,anchor.c+1))});
   }
   return out;
 }
 function parseOverviewSheet(aoa){
-  const ov = {kpiA:[], kpiB:[], dbStorage:[], status:[], usageLevel:[], spCategory:[]};
-
-  /* KPI blocks: a row of text labels directly above a row of values in the same columns.
-     Limited to the top of the sheet so the two-column tables lower down aren't mistaken
-     for KPI rows. */
+  const ov={kpiA:[],kpiB:[],dbStorage:[],status:[],usageLevel:[],spCategory:[]};
   const blocks=[];
   for(let r=0;r<Math.min(aoa.length-1,30);r++){
-    const row = aoa[r]||[];
+    const row=aoa[r]||[];
     const cols=[];
     for(let c=0;c<row.length;c++){ if(overviewText(aoa,r,c)!=="") cols.push(c); }
     if(cols.length<3) continue;
     if(cols.some(c=>overviewText(aoa,r,c)!=="" && !isNaN(Number(overviewText(aoa,r,c))))) continue;
     if(!cols.every(c=>overviewText(aoa,r+1,c)!=="")) continue;
-    blocks.push(cols.map(c=>({label:overviewText(aoa,r,c), value:overviewText(aoa,r+1,c)})));
+    blocks.push(cols.map(c=>({label:overviewText(aoa,r,c),value:overviewText(aoa,r+1,c)})));
     r++;
   }
-  ov.kpiA = blocks[0]||[];
-  ov.kpiB = blocks[1]||[];
-
-  ov.status      = readAnchoredPairs(aoa, findAnchor(aoa,"Status","Tables"), 10);
-  ov.usageLevel  = readAnchoredPairs(aoa, findAnchor(aoa,"Usage Level","Tables"), 10);
-  ov.spCategory  = readAnchoredPairs(aoa, findAnchor(aoa,"SP Category","Count"), 10);
-  ov.dbStorage   = readAnchoredPairs(aoa, findAnchor(aoa,"Database","Storage GB"), 100)
-                     .map(p=>({db:p.label, gb:p.value}));
+  ov.kpiA=blocks[0]||[]; ov.kpiB=blocks[1]||[];
+  ov.status     = readAnchoredPairs(aoa,findAnchor(aoa,"Status","Tables"),10);
+  ov.usageLevel = readAnchoredPairs(aoa,findAnchor(aoa,"Usage Level","Tables"),10);
+  ov.spCategory = readAnchoredPairs(aoa,findAnchor(aoa,"SP Category","Count"),10);
+  ov.dbStorage  = readAnchoredPairs(aoa,findAnchor(aoa,"Database","Storage GB"),100).map(p=>({db:p.label,gb:p.value}));
   return ov;
 }
-
-function loadWorkbook(arrayBuffer, fileName){
-  const wb = XLSX.read(new Uint8Array(arrayBuffer), {type:"array", cellDates:false, raw:true});
-
-  const ovName = findSheet(wb,"01");
-  STATE.overview = ovName ? parseOverviewSheet(sheetToAoa(wb, ovName)) : {kpiA:[],kpiB:[],dbStorage:[],status:[],usageLevel:[],spCategory:[]};
-
-  STATE.data = {};
+function aoaToObjects(aoa,headerRowIdx){
+  const headers=(aoa[headerRowIdx]||[]).map(h=>String(h).trim());
+  const rows=[];
+  for(let i=headerRowIdx+1;i<aoa.length;i++){
+    const r=aoa[i];
+    if(!r||r.every(v=>v===""||v==null)) continue;
+    const obj={}; let any=false;
+    headers.forEach((h,ci)=>{ if(!h) return; const v=r[ci]!==undefined?r[ci]:""; obj[h]=v; if(v!=="") any=true; });
+    if(any) rows.push(obj);
+  }
+  return rows;
+}
+function loadWorkbook(arrayBuffer,fileName){
+  const wb=XLSX.read(new Uint8Array(arrayBuffer),{type:"array",cellDates:false,raw:true});
+  const ovName=findSheet(wb,"01");
+  STATE.overview = ovName?parseOverviewSheet(sheetToAoa(wb,ovName)):{kpiA:[],kpiB:[],dbStorage:[],status:[],usageLevel:[],spCategory:[]};
+  STATE.data={};
   Object.keys(SHEET_CONFIGS).forEach(id=>{
-    const cfg = SHEET_CONFIGS[id];
-    const name = findSheet(wb, cfg.sheetCode);
+    const cfg=SHEET_CONFIGS[id];
+    const name=findSheet(wb,cfg.sheetCode);
     if(!name){ STATE.data[id]={rows:[],note:null}; return; }
-    const aoa = sheetToAoa(wb, name);
-    let rows = aoaToObjects(aoa, cfg.headerRow);
-    if(cfg.dropRow) rows = rows.filter(r=>!cfg.dropRow(r));
-    const note = (cfg.noteRow!=null && aoa[cfg.noteRow] && aoa[cfg.noteRow][0]) ? String(aoa[cfg.noteRow][0]) : null;
-    STATE.data[id] = {rows, note};
-    STATE.sections[id] = {search:"", local:{}, sort:Object.assign({},cfg.defaultSort), page:1, pageSize:50};
+    const aoa=sheetToAoa(wb,name);
+    let rows=aoaToObjects(aoa,cfg.headerRow);
+    if(cfg.dropRow) rows=rows.filter(r=>!cfg.dropRow(r));
+    const note=(cfg.noteRow!=null&&aoa[cfg.noteRow]&&aoa[cfg.noteRow][0])?String(aoa[cfg.noteRow][0]):null;
+    STATE.data[id]={rows,note};
+    STATE.sections[id]=freshSectionState(id);
   });
-
-  finalizeData(fileName);
+  finalizeData(fileName,"");
 }
 
-/* Shared by both load paths: the pre-parsed embedded dataset and an ad-hoc .xlsx. */
-function finalizeData(fileName){
-  Object.keys(SHEET_CONFIGS).forEach(id=>{
-    if(!STATE.sections[id]){
-      STATE.sections[id] = {search:"", local:{}, sort:Object.assign({},SHEET_CONFIGS[id].defaultSort), page:1, pageSize:50};
-    }
-  });
-
-  /* The DB summary sheet is the authoritative list of database names. Other sheets spell
-     the same database in mixed case (dbo/DBO, RRLive/RRLIVE), so filtering matches
-     case-insensitively rather than treating each spelling as its own database. */
-  const canonical = (STATE.data.databases ? STATE.data.databases.rows : [])
-    .map(r=>String(r["Database Name"]||"").trim()).filter(Boolean);
+/* ---------------------------------------------------------------------- *
+ * Embedded (pre-parsed) dataset                                          *
+ * ---------------------------------------------------------------------- */
+function freshSectionState(id){
+  return {search:"", colFilters:{}, sort:Object.assign({},SHEET_CONFIGS[id].defaultSort), page:1, pageSize:50};
+}
+function finalizeData(fileName,generated){
+  Object.keys(SHEET_CONFIGS).forEach(id=>{ if(!STATE.sections[id]) STATE.sections[id]=freshSectionState(id); });
+  const canonical=(STATE.data.databases?STATE.data.databases.rows:[]).map(r=>String(r["Database Name"]||"").trim()).filter(Boolean);
   if(canonical.length){
-    STATE.dbUniverse = [...new Set(canonical)].sort((a,b)=>a.localeCompare(b));
-  } else {
-    const dbSet = new Set();
+    STATE.dbUniverse=[...new Set(canonical)].sort((a,b)=>a.localeCompare(b));
+  }else{
+    const s=new Set();
     Object.keys(SHEET_CONFIGS).forEach(id=>{
       const cfg=SHEET_CONFIGS[id];
       if(!cfg.dbKey) return;
-      STATE.data[id].rows.forEach(r=>{ const v=r[cfg.dbKey]; if(v) dbSet.add(String(v)); });
+      STATE.data[id].rows.forEach(r=>{ const v=r[cfg.dbKey]; if(v) s.add(String(v)); });
     });
-    STATE.dbUniverse = [...dbSet].sort((a,b)=>a.localeCompare(b));
+    STATE.dbUniverse=[...s].sort((a,b)=>a.localeCompare(b));
   }
-
-  STATE.loaded = true;
-  STATE.fileName = fileName;
-  STATE.loadedAt = new Date();
+  STATE.loaded=true; STATE.fileName=fileName; STATE.generated=generated||""; STATE.loadedAt=new Date();
 }
-
-/* The embedded dataset ships pre-parsed (gzipped JSON of header + row arrays) because
-   parsing the raw .xlsx in the browser costs ~6s on every open. Rows are rehydrated into
-   objects here so the rest of the report is identical for both load paths. */
-async function loadEmbeddedData(packedGzB64, fileName){
-  const bin = atob(packedGzB64);
-  const bytes = new Uint8Array(bin.length);
-  for(let i=0;i<bin.length;i++) bytes[i] = bin.charCodeAt(i);
-  const json = await new Response(new Blob([bytes]).stream().pipeThrough(new DecompressionStream("gzip"))).text();
-  const packed = JSON.parse(json);
-
-  STATE.overview = packed.overview || {kpiA:[],kpiB:[],dbStorage:[],status:[],usageLevel:[],spCategory:[]};
-  STATE.data = {};
+async function loadEmbeddedData(gzB64,fileName,generated){
+  const bin=atob(gzB64);
+  const bytes=new Uint8Array(bin.length);
+  for(let i=0;i<bin.length;i++) bytes[i]=bin.charCodeAt(i);
+  const json=await new Response(new Blob([bytes]).stream().pipeThrough(new DecompressionStream("gzip"))).text();
+  const packed=JSON.parse(json);
+  STATE.overview=packed.overview||{kpiA:[],kpiB:[],dbStorage:[],status:[],usageLevel:[],spCategory:[]};
+  STATE.data={};
   Object.keys(SHEET_CONFIGS).forEach(id=>{
-    const sec = packed.sections ? packed.sections[id] : null;
+    const sec=packed.sections?packed.sections[id]:null;
     if(!sec){ STATE.data[id]={rows:[],note:null}; return; }
-    const hdrs = sec.headers;
-    const rows = sec.rows.map(arr=>{
-      const o = {};
-      for(let i=0;i<hdrs.length;i++) o[hdrs[i]] = arr[i];
-      return o;
-    });
-    STATE.data[id] = {rows, note:sec.note||null};
+    const h=sec.headers;
+    STATE.data[id]={ rows: sec.rows.map(arr=>{ const o={}; for(let i=0;i<h.length;i++) o[h[i]]=arr[i]; return o; }), note: sec.note||null };
   });
-
-  finalizeData(fileName);
+  finalizeData(fileName, packed.generated||generated||"");
 }
 
 /* ---------------------------------------------------------------------- *
  * Filtering / sorting                                                    *
  * ---------------------------------------------------------------------- */
 function getFilteredSortedRows(id){
-  const cfg = SHEET_CONFIGS[id];
-  const st = STATE.sections[id];
-  let rows = STATE.data[id].rows;
+  const cfg=SHEET_CONFIGS[id], st=STATE.sections[id];
+  let rows=STATE.data[id].rows;
 
   if(cfg.dbKey && STATE.globalDb.size){
-    const sel = new Set([...STATE.globalDb].map(d=>d.toUpperCase()));
-    rows = rows.filter(r=>sel.has(String(r[cfg.dbKey]).trim().toUpperCase()));
+    const sel=new Set([...STATE.globalDb].map(d=>d.toUpperCase()));
+    rows=rows.filter(r=>sel.has(String(r[cfg.dbKey]).trim().toUpperCase()));
   }
-  if(cfg.localFilters){
-    cfg.localFilters.forEach(lf=>{
-      const val = st.local[lf.key];
-      if(val) rows = rows.filter(r=>String(r[lf.key])===val);
-    });
+  const activeCols=Object.keys(st.colFilters).filter(k=>st.colFilters[k]!=="");
+  if(activeCols.length){
+    rows=rows.filter(r=>activeCols.every(k=>String(r[k]==null?"":r[k]).toLowerCase().includes(st.colFilters[k])));
   }
   if(st.search && cfg.searchable && cfg.searchable.length){
-    const q = st.search.trim().toLowerCase();
-    if(q){
-      rows = rows.filter(r=>cfg.searchable.some(k=>String(r[k]||"").toLowerCase().includes(q)));
-    }
+    const q=st.search.trim().toLowerCase();
+    if(q) rows=rows.filter(r=>cfg.searchable.some(k=>String(r[k]||"").toLowerCase().includes(q)));
   }
   if(st.sort && st.sort.key){
-    const {key,dir} = st.sort;
-    const mul = dir==="desc"?-1:1;
-    rows = rows.slice().sort((a,b)=>{
-      const av=a[key], bv=b[key];
-      const an=toNum(av), bn=toNum(bv);
-      if(!isNaN(an) && !isNaN(bn)) return (an-bn)*mul;
-      return String(av).localeCompare(String(bv))*mul;
+    const {key,dir}=st.sort, mul=dir==="desc"?-1:1;
+    rows=rows.slice().sort((a,b)=>{
+      const an=toNum(a[key]), bn=toNum(b[key]);
+      if(!isNaN(an)&&!isNaN(bn)) return (an-bn)*mul;
+      return String(a[key]).localeCompare(String(b[key]))*mul;
     });
   }
   return rows;
 }
 
 /* ---------------------------------------------------------------------- *
- * Chart builders                                                         *
+ * Charts                                                                 *
  * ---------------------------------------------------------------------- */
 function chartColors(n){
-  const palette=["#4f46e5","#0ea5e9","#16a34a","#d97706","#dc2626","#9333ea","#0891b2","#65a30d","#db2777","#4b5563"];
-  const out=[]; for(let i=0;i<n;i++) out.push(palette[i%palette.length]); return out;
+  const p=["#4f46e5","#0ea5e9","#16a34a","#d97706","#dc2626","#9333ea","#0891b2","#65a30d","#db2777","#475569"];
+  const o=[]; for(let i=0;i<n;i++) o.push(p[i%p.length]); return o;
 }
-function themeInk(){ return getComputedStyle(document.documentElement).getPropertyValue("--ink").trim(); }
-function themeLine(){ return getComputedStyle(document.documentElement).getPropertyValue("--line").trim(); }
-
-function topNBarChart(rows, labelKey, valueKey, n, unitSuffix, divisor){
-  const getLabel = typeof labelKey==="function"?labelKey:(r)=>r[labelKey];
-  const items = rows.map(r=>({label:String(getLabel(r)), value:toNum(r[valueKey])||0}))
-    .sort((a,b)=>b.value-a.value).slice(0,n);
-  return {
-    type:"bar",
-    data:{
-      labels: items.map(it=>it.label.length>28?it.label.slice(0,26)+"…":it.label),
-      datasets:[{
-        label: valueKey + (unitSuffix?(" ("+unitSuffix+")"):""),
-        data: items.map(it=>divisor?+(it.value/divisor).toFixed(2):it.value),
-        backgroundColor: chartColors(items.length)
-      }]
-    },
-    options: baseChartOpts({indexAxis:"y"})
-  };
-}
-function countByChart(rows, key){
-  const counts = new Map();
-  rows.forEach(r=>{ const k=String(r[key]||"—"); counts.set(k,(counts.get(k)||0)+1); });
-  const labels=[...counts.keys()], data=[...counts.values()];
-  return {
-    type:"doughnut",
-    data:{ labels, datasets:[{ data, backgroundColor: chartColors(labels.length) }] },
-    options: baseChartOpts({})
-  };
-}
+function cssVar(name){ return getComputedStyle(document.documentElement).getPropertyValue(name).trim(); }
 function baseChartOpts(extra){
-  const ink=themeInk(), line=themeLine();
+  const ink=cssVar("--ink"), line=cssVar("--line");
   return Object.assign({
     responsive:true, maintainAspectRatio:false, animation:false,
-    plugins:{ legend:{ labels:{ color:ink, font:{size:11} } } },
+    plugins:{legend:{labels:{color:ink,font:{size:10.5},boxWidth:11}}},
     scales: extra.indexAxis==="y" ? {
-      x:{ ticks:{color:ink,font:{size:10}}, grid:{color:line} },
-      y:{ ticks:{color:ink,font:{size:10}}, grid:{display:false} }
+      x:{ticks:{color:ink,font:{size:9.5}},grid:{color:line}},
+      y:{ticks:{color:ink,font:{size:9.5}},grid:{display:false}}
     } : undefined
   }, extra);
 }
 
+/* Draws each slice's count inside the arc and the total in the middle. */
+const donutCounts = {
+  id:"donutCounts",
+  afterDatasetsDraw(chart){
+    const ctx=chart.ctx, meta=chart.getDatasetMeta(0), data=chart.data.datasets[0].data||[];
+    if(!meta.data.length) return;
+    const total=data.reduce((a,b)=>a+(+b||0),0);
+    ctx.save();
+    ctx.textAlign="center"; ctx.textBaseline="middle";
+    meta.data.forEach((arc,i)=>{
+      const v=+data[i]||0;
+      if(!v || !total) return;
+      const share=v/total;
+      if(share<0.04) return;                      /* too thin to label legibly */
+      const p=arc.tooltipPosition();
+      const txt=(chart.$fmt?chart.$fmt(v):Math.round(v).toLocaleString());
+      ctx.font="700 11.5px system-ui,Segoe UI,sans-serif";
+      ctx.lineWidth=3; ctx.strokeStyle="rgba(0,0,0,.35)";
+      ctx.strokeText(txt,p.x,p.y);
+      ctx.fillStyle="#fff";
+      ctx.fillText(txt,p.x,p.y);
+    });
+    const c=meta.data[0];
+    if(c && typeof c.x==="number"){
+      ctx.fillStyle=cssVar("--ink");
+      ctx.font="800 16px system-ui,Segoe UI,sans-serif";
+      ctx.fillText(chart.$fmt?chart.$fmt(total):Math.round(total).toLocaleString(), c.x, c.y-6);
+      ctx.fillStyle=cssVar("--ink2");
+      ctx.font="700 9.5px system-ui,Segoe UI,sans-serif";
+      ctx.fillText("TOTAL", c.x, c.y+10);
+    }
+    ctx.restore();
+  }
+};
+function donutSpec(labels,values,fmt){
+  return {
+    type:"doughnut",
+    data:{labels,datasets:[{data:values,backgroundColor:chartColors(labels.length),borderWidth:0}]},
+    options:Object.assign(baseChartOpts({cutout:"52%"}),{onResize:()=>{}}),
+    plugins:[donutCounts],
+    $fmt:fmt
+  };
+}
+function topNBarChart(rows,labelKey,valueKey,n,unitSuffix,divisor){
+  const get=typeof labelKey==="function"?labelKey:(r)=>r[labelKey];
+  const items=rows.map(r=>({label:String(get(r)),value:toNum(r[valueKey])||0}))
+    .sort((a,b)=>b.value-a.value).slice(0,n);
+  return {
+    type:"bar",
+    data:{
+      labels:items.map(i=>i.label.length>30?i.label.slice(0,28)+"…":i.label),
+      datasets:[{label:valueKey+(unitSuffix?(" ("+unitSuffix+")"):""),data:items.map(i=>divisor?+(i.value/divisor).toFixed(2):i.value),backgroundColor:chartColors(items.length)}]
+    },
+    options:baseChartOpts({indexAxis:"y"})
+  };
+}
+function countByChart(rows,key){
+  const m=new Map();
+  rows.forEach(r=>{ const k=String(r[key]||"—"); m.set(k,(m.get(k)||0)+1); });
+  const entries=[...m.entries()].sort((a,b)=>b[1]-a[1]);
+  return donutSpec(entries.map(e=>e[0]),entries.map(e=>e[1]));
+}
+function countTopNChart(rows,key,n){
+  const m=new Map();
+  rows.forEach(r=>{ const k=String(r[key]||"—"); m.set(k,(m.get(k)||0)+1); });
+  const items=[...m.entries()].sort((a,b)=>b[1]-a[1]).slice(0,n);
+  return {
+    type:"bar",
+    data:{labels:items.map(i=>i[0].length>30?i[0].slice(0,28)+"…":i[0]),datasets:[{label:"Rows",data:items.map(i=>i[1]),backgroundColor:chartColors(items.length)}]},
+    options:baseChartOpts({indexAxis:"y"})
+  };
+}
+function sumByDonut(rows,groupKey,valueKey,n){
+  const m=new Map();
+  rows.forEach(r=>{ const k=String(r[groupKey]||"—"); m.set(k,(m.get(k)||0)+(toNum(r[valueKey])||0)); });
+  const items=[...m.entries()].sort((a,b)=>b[1]-a[1]).slice(0,n);
+  const isSize=/MB$/i.test(valueKey)||/\(MB\)/.test(valueKey);
+  return donutSpec(items.map(i=>i[0]),items.map(i=>+i[1].toFixed(2)), isSize?fmtSize:(v)=>Math.round(v).toLocaleString());
+}
+function pairDonut(rows,keyA,keyB){
+  return donutSpec([keyA,keyB],[sumBy(rows,keyA),sumBy(rows,keyB)]);
+}
+function makeChart(canvasId,spec,registry){
+  const el=document.getElementById(canvasId);
+  if(!el) return;
+  const chart=new Chart(el,spec);
+  if(spec.$fmt) chart.$fmt=spec.$fmt;
+  registry.push(chart);
+}
+function destroyCharts(reg){ reg.forEach(c=>{try{c.destroy()}catch(e){}}); reg.length=0; }
+
 /* ---------------------------------------------------------------------- *
- * Navigation & rendering                                                 *
+ * Navigation                                                             *
  * ---------------------------------------------------------------------- */
 function renderNav(){
-  const nav = document.getElementById("nav");
-  nav.innerHTML = NAV_ITEMS.map(it=>{
-    const cls = ["nav-item"];
-    if(it.id===STATE.current) cls.push("active");
-    if(!STATE.loaded) cls.push("disabled");
-    return '<div class="'+cls.join(" ")+'" data-nav="'+it.id+'"><span class="nav-icon">'+it.icon+'</span><span class="label">'+it.label+'</span></div>';
-  }).join("");
-  nav.querySelectorAll(".nav-item").forEach(el=>{
-    el.addEventListener("click", ()=>{ if(STATE.loaded) navigate(el.dataset.nav); });
-  });
+  const nav=document.getElementById("nav");
+  nav.innerHTML=NAV_ITEMS.map(it=>
+    '<div class="nav-item'+(it.id===STATE.current?" active":"")+'" data-nav="'+it.id+'"><span class="nav-icon">'+it.icon+'</span><span class="label">'+escapeHtml(it.label)+'</span></div>'
+  ).join("");
+  nav.querySelectorAll(".nav-item").forEach(el=>el.addEventListener("click",()=>navigate(el.dataset.nav)));
 }
-function navigate(id){
-  STATE.current = id;
+function navigate(navId){
+  STATE.current=navId;
   renderNav();
-  document.getElementById("sectionTitle").textContent = id==="overview" ? "Overview" : SHEET_CONFIGS[id].title;
-  document.getElementById("sectionSub").textContent = id==="overview"
-    ? "Executive summary across all "+STATE.dbUniverse.length+" replicated databases"
-    : SHEET_CONFIGS[id].sub;
-  if(id==="overview") renderOverview(); else renderDataSection(id);
-}
-function destroyCharts(){ ACTIVE_CHARTS.forEach(c=>{ try{c.destroy();}catch(e){} }); ACTIVE_CHARTS=[]; }
+  destroyCharts(OVERVIEW_CHARTS);
+  const tblId=tableSectionOf(navId);
+  const cfg=SHEET_CONFIGS[tblId];
+  const item=NAV_ITEMS.find(n=>n.id===navId);
+  document.getElementById("sectionTitle").textContent=item?item.label:cfg.title;
+  document.getElementById("sectionSub").textContent=cfg.sub;
 
-function renderOverview(){
-  destroyCharts();
-  document.getElementById("controlbar").innerHTML = "";
-  document.getElementById("notePanel").hidden = true;
-  document.getElementById("tableToolbar").innerHTML = "";
-  document.getElementById("pager").innerHTML = "";
-
-  const ov = STATE.overview;
-  const kpiHtml = (list)=> list.map(k=>'<div class="kpi"><div class="lbl">'+escapeHtml(k.label)+'</div><div class="val">'+escapeHtml(k.value)+'</div></div>').join("");
-  document.getElementById("kpis").innerHTML = kpiHtml(ov.kpiA) + kpiHtml(ov.kpiB);
-
-  const chartsEl = document.getElementById("charts");
-  chartsEl.innerHTML = [
-    ['ovChartStorage','Replicated Storage by Database (GB)'],
-    ['ovChartStatus','Table Usage Status'],
-    ['ovChartLevel','Usage Level (used tables)'],
-    ['ovChartSp','Stored Procedure Category']
-  ].map(([cid,title])=>'<div class="chart-card"><h3>'+title+'</h3><div class="canvas-wrap"><canvas id="'+cid+'"></canvas></div></div>').join("");
-
-  document.getElementById("tableWrap").innerHTML = "";
-
-  const storItems = ov.dbStorage.slice().sort((a,b)=>b.gb-a.gb).slice(0,18);
-  ACTIVE_CHARTS.push(new Chart(document.getElementById("ovChartStorage"), {
-    type:"bar",
-    data:{ labels: storItems.map(i=>i.db), datasets:[{label:"Storage (GB)", data:storItems.map(i=>i.gb), backgroundColor: chartColors(storItems.length)}] },
-    options: baseChartOpts({indexAxis:"y"})
-  }));
-  ACTIVE_CHARTS.push(new Chart(document.getElementById("ovChartStatus"), {
-    type:"doughnut",
-    data:{ labels: ov.status.map(s=>s.label), datasets:[{data: ov.status.map(s=>s.value), backgroundColor: chartColors(ov.status.length)}] },
-    options: baseChartOpts({})
-  }));
-  ACTIVE_CHARTS.push(new Chart(document.getElementById("ovChartLevel"), {
-    type:"doughnut",
-    data:{ labels: ov.usageLevel.map(s=>s.label), datasets:[{data: ov.usageLevel.map(s=>s.value), backgroundColor: chartColors(ov.usageLevel.length)}] },
-    options: baseChartOpts({})
-  }));
-  ACTIVE_CHARTS.push(new Chart(document.getElementById("ovChartSp"), {
-    type:"doughnut",
-    data:{ labels: ov.spCategory.map(s=>s.label), datasets:[{data: ov.spCategory.map(s=>s.value), backgroundColor: chartColors(ov.spCategory.length)}] },
-    options: baseChartOpts({})
-  }));
-}
-
-function dbFilterDropdown(){
-  const options = STATE.dbUniverse.map(db=>{
-    const checked = STATE.globalDb.size===0 || STATE.globalDb.has(db) ? "" : "";
-    const isOn = STATE.globalDb.has(db);
-    return '<label><input type="checkbox" data-db="'+escapeHtml(db)+'" '+(isOn?"checked":"")+'> '+escapeHtml(db)+'</label>';
-  }).join("");
-  const activeLabel = STATE.globalDb.size ? STATE.globalDb.size+" DB selected" : "All Databases";
-  return '<div class="ddwrap" id="dbFilterWrap">'
-    + '<button class="btn" id="dbFilterBtn">🗄️ '+activeLabel+' ▾</button>'
-    + '<div class="dd-panel" id="dbFilterPanel" style="display:none">'
-    + '<div class="dd-actions"><button id="dbAllBtn">All</button><button id="dbNoneBtn">None</button></div>'
-    + options
-    + '</div></div>';
-}
-
-function renderDataSection(id){
-  const cfg = SHEET_CONFIGS[id];
-  const st = STATE.sections[id];
-
-  // Control bar: global DB filter (if applicable) + export buttons
-  const controlbar = document.getElementById("controlbar");
-  controlbar.innerHTML =
-    '<div class="controlbar-left">' + (cfg.dbKey ? dbFilterDropdown() : "") + '</div>'
-    + '<div class="controlbar-right">'
-    + '<button class="btn" id="exportXlsxBtn">⤓ Export Excel</button>'
-    + '<button class="btn" id="exportHtmlBtn">⤓ Export HTML</button>'
-    + '</div>';
-  if(cfg.dbKey) wireDbFilter();
-  document.getElementById("exportXlsxBtn").addEventListener("click", ()=>exportExcel(id));
-  document.getElementById("exportHtmlBtn").addEventListener("click", ()=>exportHtml(id));
-
-  // Note panel
-  const note = STATE.data[id].note;
-  const notePanel = document.getElementById("notePanel");
-  if(note){
-    notePanel.hidden = false;
-    notePanel.innerHTML = '<div class="note-head" id="noteHead"><span>ℹ️ Methodology / Notes</span><span id="noteArrow">▾</span></div><div class="note-body">'+escapeHtml(note)+'</div>';
-    notePanel.classList.remove("open");
-    document.getElementById("noteHead").addEventListener("click", ()=>notePanel.classList.toggle("open"));
-  } else {
-    notePanel.hidden = true;
+  const ovBlocks=document.getElementById("overviewBlocks");
+  const footer=document.getElementById("footerBlocks");
+  const heading=document.getElementById("tableHeading");
+  if(navId==="overview"){
+    renderOverviewBlocks(ovBlocks);
+    footer.innerHTML=datasetInfoHtml();
+    heading.hidden=false; heading.textContent="Databases";
+  }else{
+    ovBlocks.innerHTML=""; footer.innerHTML=""; heading.hidden=true;
   }
+  renderSectionShell(tblId);
+}
 
-  // Table toolbar: search + local filters + pageSize
-  const toolbar = document.getElementById("tableToolbar");
-  const localFiltersHtml = (cfg.localFilters||[]).map(lf=>{
-    const values = [...new Set(STATE.data[id].rows.map(r=>String(r[lf.key])).filter(Boolean))].sort();
-    const cur = st.local[lf.key]||"";
-    return '<select data-local="'+lf.key+'"><option value="">'+escapeHtml(lf.label)+': All</option>'
-      + values.map(v=>'<option value="'+escapeHtml(v)+'" '+(v===cur?"selected":"")+'>'+escapeHtml(v)+'</option>').join("")
-      + '</select>';
-  }).join("");
-  toolbar.innerHTML =
+function renderOverviewBlocks(root){
+  const ov=STATE.overview;
+  const all=[...(ov.kpiA||[]),...(ov.kpiB||[])];
+  const used=new Set();
+  let html='<div style="display:flex;flex-direction:column;gap:10px">';
+  OVERVIEW_GROUPS.forEach(g=>{
+    const items=all.filter((k,i)=>{
+      if(used.has(i)) return false;
+      const hit=g.match.some(m=>k.label.indexOf(m)===0||k.label.indexOf(m)>-1);
+      if(hit) used.add(i);
+      return hit;
+    });
+    if(!items.length) return;
+    html+='<div class="group-label">'+escapeHtml(g.title)+'</div><div class="kpis">'
+      + items.map(k=>'<div class="kpi"><div class="lbl">'+escapeHtml(k.label)+'</div><div class="val">'+escapeHtml(k.value)+'</div></div>').join("")
+      + '</div>';
+  });
+  const rest=all.filter((k,i)=>!used.has(i));
+  if(rest.length){
+    html+='<div class="group-label">Other</div><div class="kpis">'
+      + rest.map(k=>'<div class="kpi"><div class="lbl">'+escapeHtml(k.label)+'</div><div class="val">'+escapeHtml(k.value)+'</div></div>').join("")
+      + '</div>';
+  }
+  html+='<div class="group-label">Distribution</div><div class="charts">'
+    + [["ovStorage","Replicated Storage by Database (GB)"],
+       ["ovStatus","Table Usage Status"],
+       ["ovLevel","Usage Level (BI-used tables)"],
+       ["ovSp","Stored Procedure Category"]]
+      .map(([id,t])=>'<div class="chart-card"><h3>'+t+'</h3><div class="canvas-wrap"><canvas id="'+id+'"></canvas></div></div>').join("")
+    + '</div></div>';
+  root.innerHTML=html;
+
+  const stor=(ov.dbStorage||[]).slice().sort((a,b)=>b.gb-a.gb);
+  makeChart("ovStorage",{
+    type:"bar",
+    data:{labels:stor.map(s=>s.db),datasets:[{label:"Storage (GB)",data:stor.map(s=>s.gb),backgroundColor:chartColors(stor.length)}]},
+    options:baseChartOpts({indexAxis:"y"})
+  },OVERVIEW_CHARTS);
+  makeChart("ovStatus",donutSpec((ov.status||[]).map(s=>s.label),(ov.status||[]).map(s=>s.value)),OVERVIEW_CHARTS);
+  makeChart("ovLevel",donutSpec((ov.usageLevel||[]).map(s=>s.label),(ov.usageLevel||[]).map(s=>s.value)),OVERVIEW_CHARTS);
+  makeChart("ovSp",donutSpec((ov.spCategory||[]).map(s=>s.label),(ov.spCategory||[]).map(s=>s.value)),OVERVIEW_CHARTS);
+}
+
+function datasetInfoHtml(){
+  const items=[
+    ["Source workbook",escapeHtml(STATE.fileName)],
+    ["Data prepared",escapeHtml(STATE.generated||"—")],
+    ["Loaded",STATE.loadedAt?STATE.loadedAt.toLocaleTimeString():"—"],
+    ["Databases",String(STATE.dbUniverse.length)]
+  ].concat(Object.keys(SHEET_CONFIGS).map(id=>[SHEET_CONFIGS[id].title+" rows",STATE.data[id].rows.length.toLocaleString()]));
+  return '<div class="group-label" style="margin-top:8px">Dataset</div><div class="infogrid">'
+    + items.map(([k,v])=>'<div class="infoitem"><span>'+k+'</span><b>'+v+'</b></div>').join("")
+    + '</div>';
+}
+
+/* ---------------------------------------------------------------------- *
+ * Section rendering                                                      *
+ * ---------------------------------------------------------------------- */
+function renderSectionShell(id){
+  const cfg=SHEET_CONFIGS[id], st=STATE.sections[id];
+
+  const note=STATE.data[id].note;
+  const np=document.getElementById("notePanel");
+  if(note){
+    np.hidden=false;
+    np.innerHTML='<div class="note-head" id="noteHead"><span>ℹ️ Methodology / Notes</span><span>▾</span></div><div class="note-body">'+escapeHtml(note)+'</div>';
+    np.classList.remove("open");
+    document.getElementById("noteHead").addEventListener("click",()=>np.classList.toggle("open"));
+  }else np.hidden=true;
+
+  document.getElementById("toolbar").innerHTML=
     '<div class="toolbar-left">'
-    + '<input type="search" id="searchInput" placeholder="Search…" value="'+escapeHtml(st.search)+'">'
-    + localFiltersHtml
+    + (cfg.dbKey?dbFilterHtml():"")
+    + '<input type="search" id="globalSearch" placeholder="Search '+escapeHtml(cfg.title)+'…" value="'+escapeHtml(st.search)+'">'
+    + '<button class="btn" id="clearFiltersBtn">Clear filters</button>'
     + '</div>'
     + '<div class="toolbar-right"><span class="count-badge" id="countBadge"></span>'
-    + '<select id="pageSizeSelect"><option value="25">25 / page</option><option value="50">50 / page</option><option value="100">100 / page</option><option value="200">200 / page</option></select>'
-    + '</div>';
-  document.getElementById("pageSizeSelect").value = String(st.pageSize);
-  let searchTimer=null;
-  document.getElementById("searchInput").addEventListener("input", (e)=>{
-    clearTimeout(searchTimer);
-    const v=e.target.value;
-    searchTimer=setTimeout(()=>{ st.search=v; st.page=1; refreshSection(id); }, 280);
-  });
-  toolbar.querySelectorAll("select[data-local]").forEach(sel=>{
-    sel.addEventListener("change",()=>{ st.local[sel.dataset.local]=sel.value; st.page=1; refreshSection(id); });
-  });
-  document.getElementById("pageSizeSelect").addEventListener("change",(e)=>{ st.pageSize=+e.target.value; st.page=1; refreshSection(id); });
+    + '<select id="pageSizeSelect"><option value="25">25 / page</option><option value="50">50 / page</option><option value="100">100 / page</option><option value="250">250 / page</option></select></div>';
+  document.getElementById("pageSizeSelect").value=String(st.pageSize);
+  if(cfg.dbKey) wireDbFilter(id);
 
+  let t=null;
+  document.getElementById("globalSearch").addEventListener("input",e=>{
+    const v=e.target.value; clearTimeout(t);
+    t=setTimeout(()=>{ st.search=v; st.page=1; refreshSection(id); },260);
+  });
+  document.getElementById("pageSizeSelect").addEventListener("change",e=>{ st.pageSize=+e.target.value; st.page=1; refreshSection(id); });
+  document.getElementById("clearFiltersBtn").addEventListener("click",()=>{
+    st.search=""; st.colFilters={}; st.page=1; STATE.globalDb.clear();
+    renderSectionShell(id);
+  });
+
+  buildTableShell(id);
   refreshSection(id);
 }
 
-function wireDbFilter(){
-  const btn=document.getElementById("dbFilterBtn"), panel=document.getElementById("dbFilterPanel");
-  btn.addEventListener("click",(e)=>{ e.stopPropagation(); panel.style.display = panel.style.display==="none"?"block":"none"; });
-  document.addEventListener("click",(e)=>{ if(panel && !panel.contains(e.target) && e.target!==btn) panel.style.display="none"; }, {once:true});
+function dbFilterHtml(){
+  const label=STATE.globalDb.size?STATE.globalDb.size+" DB selected":"All Databases";
+  return '<div class="ddwrap" id="dbWrap"><button class="btn" id="dbBtn">🗄️ '+label+' ▾</button>'
+    + '<div class="dd-panel" id="dbPanel" style="display:none">'
+    + '<div class="dd-actions"><button id="dbAll">All</button><button id="dbNone">None</button></div>'
+    + STATE.dbUniverse.map(db=>'<label><input type="checkbox" data-db="'+escapeHtml(db)+'" '+(STATE.globalDb.has(db)?"checked":"")+'> '+escapeHtml(db)+'</label>').join("")
+    + '</div></div>';
+}
+function wireDbFilter(id){
+  const btn=document.getElementById("dbBtn"), panel=document.getElementById("dbPanel");
+  btn.addEventListener("click",e=>{ e.stopPropagation(); panel.style.display=panel.style.display==="none"?"block":"none"; });
+  document.addEventListener("click",e=>{ if(panel&&!panel.contains(e.target)&&e.target!==btn) panel.style.display="none"; });
   panel.querySelectorAll("input[data-db]").forEach(cb=>{
     cb.addEventListener("change",()=>{
       if(cb.checked) STATE.globalDb.add(cb.dataset.db); else STATE.globalDb.delete(cb.dataset.db);
-      refreshSection(STATE.current);
-      navigate(STATE.current);
-      document.getElementById("dbFilterPanel").style.display="block";
+      btn.textContent="🗄️ "+(STATE.globalDb.size?STATE.globalDb.size+" DB selected":"All Databases")+" ▾";
+      STATE.sections[id].page=1;
+      refreshSection(id);
+      if(STATE.current==="overview") refreshOverviewCharts();
     });
   });
-  document.getElementById("dbAllBtn").addEventListener("click",()=>{ STATE.globalDb.clear(); navigate(STATE.current); });
-  document.getElementById("dbNoneBtn").addEventListener("click",()=>{ STATE.globalDb = new Set(STATE.dbUniverse); navigate(STATE.current); });
+  document.getElementById("dbAll").addEventListener("click",()=>{ STATE.globalDb.clear(); renderSectionShell(id); });
+  document.getElementById("dbNone").addEventListener("click",()=>{ STATE.globalDb=new Set(STATE.dbUniverse); renderSectionShell(id); });
+}
+function refreshOverviewCharts(){ /* overview KPIs come from the summary sheet and are not row-filtered */ }
+
+/* Table shell is built once per section so the per-column filter inputs keep focus. */
+function buildTableShell(id){
+  const cfg=SHEET_CONFIGS[id], st=STATE.sections[id];
+  const wrap=document.getElementById("tableWrap");
+  const head='<thead><tr>'
+    + cfg.columns.map(c=>'<th class="'+(isNumericType(c.type)||c.type==="pct"||c.type==="pctsmall"?"num":"")+'" data-key="'+escapeHtml(c.key)+'">'+escapeHtml(c.key)+' <span class="arrow" data-arrow="'+escapeHtml(c.key)+'"></span></th>').join("")
+    + '</tr><tr class="filters">'
+    + cfg.columns.map(c=>'<th><input type="text" data-fkey="'+escapeHtml(c.key)+'" placeholder="filter…" value="'+escapeHtml(st.colFilters[c.key]||"")+'"></th>').join("")
+    + '</tr></thead><tbody id="dtBody"></tbody><tfoot id="dtFoot"></tfoot>';
+  wrap.innerHTML='<table class="dt">'+head+'</table>';
+
+  wrap.querySelectorAll("thead th[data-key]").forEach(th=>{
+    th.addEventListener("click",()=>{
+      const key=th.dataset.key;
+      if(st.sort.key===key) st.sort.dir=st.sort.dir==="asc"?"desc":"asc";
+      else st.sort={key,dir:"desc"};
+      st.page=1; updateSortArrows(id); refreshSection(id);
+    });
+  });
+  let ft=null;
+  wrap.querySelectorAll("input[data-fkey]").forEach(inp=>{
+    inp.addEventListener("click",e=>e.stopPropagation());
+    inp.addEventListener("input",()=>{
+      clearTimeout(ft);
+      ft=setTimeout(()=>{
+        st.colFilters[inp.dataset.fkey]=inp.value.trim().toLowerCase();
+        st.page=1; refreshSection(id);
+      },260);
+    });
+  });
+  updateSortArrows(id);
+}
+function updateSortArrows(id){
+  const st=STATE.sections[id];
+  document.querySelectorAll("#tableWrap [data-arrow]").forEach(el=>{
+    el.textContent = el.dataset.arrow===st.sort.key ? (st.sort.dir==="asc"?"▲":"▼") : "";
+  });
 }
 
 function refreshSection(id){
-  const cfg = SHEET_CONFIGS[id];
-  const st = STATE.sections[id];
-  const rows = getFilteredSortedRows(id);
+  const cfg=SHEET_CONFIGS[id];
+  const rows=getFilteredSortedRows(id);
 
-  // KPIs
-  document.getElementById("kpis").innerHTML = cfg.kpis(rows).map(k=>
+  document.getElementById("kpis").innerHTML=cfg.kpis(rows).map(k=>
     '<div class="kpi"><div class="lbl">'+escapeHtml(k.label)+'</div><div class="val">'+escapeHtml(String(k.value))+'</div></div>'
   ).join("");
 
-  // Charts
-  destroyCharts();
-  const chartsEl = document.getElementById("charts");
-  chartsEl.innerHTML = (cfg.charts||[]).map((c,i)=>'<div class="chart-card"><h3>'+escapeHtml(c.title)+'</h3><div class="canvas-wrap"><canvas id="secChart'+i+'"></canvas></div></div>').join("");
-  (cfg.charts||[]).forEach((c,i)=>{
-    const spec = c.build(rows);
-    ACTIVE_CHARTS.push(new Chart(document.getElementById("secChart"+i), spec));
-  });
+  destroyCharts(SECTION_CHARTS);
+  document.getElementById("charts").innerHTML=(cfg.charts||[]).map((c,i)=>
+    '<div class="chart-card"><h3>'+escapeHtml(c.title)+'</h3><div class="canvas-wrap"><canvas id="secChart'+i+'"></canvas></div></div>'
+  ).join("");
+  (cfg.charts||[]).forEach((c,i)=>makeChart("secChart"+i,c.build(rows),SECTION_CHARTS));
 
-  // Count badge
-  const total = STATE.data[id].rows.length;
+  const total=STATE.data[id].rows.length;
   document.getElementById("countBadge").textContent = rows.length===total
     ? rows.length.toLocaleString()+" rows"
     : rows.length.toLocaleString()+" of "+total.toLocaleString()+" rows";
 
-  // Table
-  renderTable(id, rows);
+  renderRows(id,rows);
 }
 
-function renderTable(id, rows){
-  const cfg = SHEET_CONFIGS[id];
-  const st = STATE.sections[id];
-  const wrap = document.getElementById("tableWrap");
-
-  const thead = '<thead><tr>' + cfg.columns.map(c=>{
-    const isSort = st.sort.key===c.key;
-    const arrow = isSort ? (st.sort.dir==="asc"?"▲":"▼") : "";
-    const numCls = (c.type==="int"||c.type==="num1"||c.type==="pct"||c.type==="pctsmall"||c.type==="size") ? " num" : "";
-    return '<th class="'+numCls.trim()+'" data-key="'+c.key+'">'+escapeHtml(c.label)+' <span class="arrow">'+arrow+'</span></th>';
-  }).join("") + '</tr></thead>';
-
-  const pageCount = Math.max(1, Math.ceil(rows.length/st.pageSize));
+function renderRows(id,rows){
+  const cfg=SHEET_CONFIGS[id], st=STATE.sections[id];
+  const pageCount=Math.max(1,Math.ceil(rows.length/st.pageSize));
   if(st.page>pageCount) st.page=pageCount;
-  const startIdx = (st.page-1)*st.pageSize;
-  const pageRows = rows.slice(startIdx, startIdx+st.pageSize);
+  const start=(st.page-1)*st.pageSize;
+  const pageRows=rows.slice(start,start+st.pageSize);
 
-  let tbody;
-  if(pageRows.length===0){
-    tbody = '<tbody><tr class="empty-row"><td colspan="'+cfg.columns.length+'">No rows match the current filters.</td></tr></tbody>';
-  } else {
-    tbody = '<tbody>' + pageRows.map(r=>{
-      return '<tr>' + cfg.columns.map(c=>{
-        const numCls = (c.type==="int"||c.type==="num1"||c.type==="pct"||c.type==="pctsmall"||c.type==="size") ? " num" : "";
-        return '<td class="'+numCls.trim()+'">'+fmtCell(c, r[c.key])+'</td>';
-      }).join("") + '</tr>';
-    }).join("") + '</tbody>';
-  }
+  const body=document.getElementById("dtBody");
+  body.innerHTML = pageRows.length
+    ? pageRows.map(r=>'<tr>'+cfg.columns.map(c=>
+        '<td class="'+(isNumericType(c.type)||c.type==="pct"||c.type==="pctsmall"?"num":"")+'">'+fmtCell(c,r[c.key])+'</td>').join("")+'</tr>').join("")
+    : '<tr class="empty-row"><td colspan="'+cfg.columns.length+'">No rows match the current filters.</td></tr>';
 
-  wrap.innerHTML = '<table class="dt">'+thead+tbody+'</table>';
-  wrap.querySelectorAll("thead th[data-key]").forEach(th=>{
-    th.addEventListener("click",()=>{
-      const key=th.dataset.key;
-      if(st.sort.key===key) st.sort.dir = st.sort.dir==="asc"?"desc":"asc";
-      else st.sort = {key, dir:"desc"};
-      st.page=1;
-      refreshSection(id);
-    });
-  });
+  document.getElementById("dtFoot").innerHTML=totalsRowHtml(cfg,rows);
 
-  // Pager
-  const pager = document.getElementById("pager");
-  pager.innerHTML =
-    '<span class="pageinfo">Page '+st.page+' of '+pageCount+'</span>'
+  document.getElementById("pager").innerHTML=
+    '<span class="pageinfo">Showing '+(rows.length?(start+1).toLocaleString():0)+'–'+Math.min(start+st.pageSize,rows.length).toLocaleString()+' of '+rows.length.toLocaleString()+' · page '+st.page+' of '+pageCount+'</span>'
     + '<button id="pgFirst" '+(st.page<=1?"disabled":"")+'>« First</button>'
     + '<button id="pgPrev" '+(st.page<=1?"disabled":"")+'>‹ Prev</button>'
     + '<button id="pgNext" '+(st.page>=pageCount?"disabled":"")+'>Next ›</button>'
     + '<button id="pgLast" '+(st.page>=pageCount?"disabled":"")+'>Last »</button>';
-  const go=(p)=>{ st.page=Math.min(Math.max(1,p),pageCount); renderTable(id, getFilteredSortedRows(id)); };
-  const bind=(elId,fn)=>{ const el=document.getElementById(elId); if(el) el.addEventListener("click",fn); };
-  bind("pgFirst",()=>go(1));
-  bind("pgPrev",()=>go(st.page-1));
-  bind("pgNext",()=>go(st.page+1));
-  bind("pgLast",()=>go(pageCount));
+  const go=p=>{ st.page=Math.min(Math.max(1,p),pageCount); renderRows(id,rows); };
+  const b=(i,f)=>{ const e=document.getElementById(i); if(e) e.addEventListener("click",f); };
+  b("pgFirst",()=>go(1)); b("pgPrev",()=>go(st.page-1)); b("pgNext",()=>go(st.page+1)); b("pgLast",()=>go(pageCount));
 }
 
-/* ---------------------------------------------------------------------- *
- * Export: Excel & standalone HTML                                        *
- * ---------------------------------------------------------------------- */
-function safeFileBase(id){
-  return (id==="overview"?"Overview":SHEET_CONFIGS[id].title).replace(/[^\w]+/g,"_");
-}
-function exportExcel(id){
-  const cfg = SHEET_CONFIGS[id];
-  const rows = getFilteredSortedRows(id);
-  const aoa = [cfg.columns.map(c=>c.label)];
-  rows.forEach(r=>{ aoa.push(cfg.columns.map(c=>{
-    const v=r[c.key];
-    return (v===""||v==null) ? "" : (isNaN(Number(v)) ? v : Number(v));
-  })); });
-  const ws = XLSX.utils.aoa_to_sheet(aoa);
-  const wb = XLSX.utils.book_new();
-  XLSX.utils.book_append_sheet(wb, ws, cfg.title.slice(0,31));
-  XLSX.writeFile(wb, "SAP_Replication_"+safeFileBase(id)+".xlsx");
-}
-function currentFilterSummary(id){
-  const cfg = SHEET_CONFIGS[id];
-  const st = STATE.sections[id];
-  const parts=[];
-  if(STATE.globalDb.size) parts.push("Databases: "+[...STATE.globalDb].join(", "));
-  if(st.search) parts.push('Search: "'+st.search+'"');
-  Object.keys(st.local||{}).forEach(k=>{ if(st.local[k]) parts.push(k+": "+st.local[k]); });
-  return parts.length ? parts.join(" · ") : "No filters applied (full dataset)";
-}
-function exportHtml(id){
-  const cfg = SHEET_CONFIGS[id];
-  const rows = getFilteredSortedRows(id);
-  const genAt = new Date().toLocaleString();
-
-  const chartImgs = ACTIVE_CHARTS.map((c,i)=>{
-    try{ return {title:(cfg.charts&&cfg.charts[i]?cfg.charts[i].title:"Chart"), src:c.canvas.toDataURL("image/png")}; }
-    catch(e){ return null; }
-  }).filter(Boolean);
-
-  const tableRows = rows.map(r=>'<tr>'+cfg.columns.map(c=>{
-    const numCls=(c.type==="int"||c.type==="num1"||c.type==="pct"||c.type==="pctsmall"||c.type==="size")?' class="num"':"";
-    let val = fmtCell(c, r[c.key]);
-    if(c.type==="badge"){ const key=String(r[c.key]||"").trim(); val = key?escapeHtml(key):"—"; }
-    return '<td'+numCls+'>'+val+'</td>';
-  }).join("")+'</tr>').join("");
-
-  const html = '<!DOCTYPE html><html><head><meta charset="UTF-8"><title>'+escapeHtml(cfg.title)+' – Exported Report</title>'
-    + '<style>body{font-family:Segoe UI,Arial,sans-serif;background:#f6f7fb;color:#111827;margin:0;padding:28px}'
-    + 'h1{font-size:19px;margin:0 0 4px} .meta{color:#6b7280;font-size:12.5px;margin-bottom:18px}'
-    + '.charts{display:flex;gap:16px;flex-wrap:wrap;margin-bottom:22px} .chart{background:#fff;border:1px solid #e5e7eb;border-radius:10px;padding:12px;max-width:480px}'
-    + '.chart img{max-width:100%} .chart h3{font-size:12.5px;margin:0 0 8px}'
-    + 'table{border-collapse:collapse;width:100%;font-size:12px;background:#fff} th,td{padding:7px 10px;border-bottom:1px solid #e5e7eb;text-align:left;white-space:nowrap}'
-    + 'th{background:#f1f3f9;position:sticky;top:0} td.num,th.num{text-align:right} tr:hover{background:#f8f9fd}'
-    + '.wrap{overflow:auto;border:1px solid #e5e7eb;border-radius:10px;max-height:80vh}</style></head><body>'
-    + '<h1>SAP Replication Analytics — '+escapeHtml(cfg.title)+'</h1>'
-    + '<div class="meta">Source: '+escapeHtml(STATE.fileName)+' · Generated '+genAt+' · '+rows.length.toLocaleString()+' rows · '+escapeHtml(currentFilterSummary(id))+'</div>'
-    + (chartImgs.length? '<div class="charts">'+chartImgs.map(ci=>'<div class="chart"><h3>'+escapeHtml(ci.title)+'</h3><img src="'+ci.src+'"></div>').join("")+'</div>' : "")
-    + '<div class="wrap"><table><thead><tr>'+cfg.columns.map(c=>'<th'+((c.type==="int"||c.type==="num1"||c.type==="pct"||c.type==="pctsmall"||c.type==="size")?' class="num"':"")+'>'+escapeHtml(c.label)+'</th>').join("")+'</tr></thead><tbody>'
-    + (tableRows || '<tr><td colspan="'+cfg.columns.length+'" style="text-align:center;color:#6b7280;padding:20px">No rows</td></tr>')
-    + '</tbody></table></div></body></html>';
-
-  const blob = new Blob([html], {type:"text/html"});
-  const a = document.createElement("a");
-  a.href = URL.createObjectURL(blob);
-  a.download = "SAP_Replication_"+safeFileBase(id)+".html";
-  document.body.appendChild(a); a.click(); a.remove();
-  setTimeout(()=>URL.revokeObjectURL(a.href), 4000);
-}
-
-/* ---------------------------------------------------------------------- *
- * File loading UI                                                        *
- * ---------------------------------------------------------------------- */
-function handleFile(file){
-  if(!file) return;
-  const reader = new FileReader();
-  reader.onload = (e)=>{
-    try{
-      loadWorkbook(e.target.result, file.name);
-      onWorkbookLoaded();
-    }catch(err){
-      alert("Could not read this workbook: "+err.message);
-      console.error(err);
+/* Totals cover every filtered row, not just the visible page. */
+function totalsRowHtml(cfg,rows){
+  let first=true;
+  return '<tr>'+cfg.columns.map(c=>{
+    const numeric=isNumericType(c.type);
+    if(!numeric){
+      const cell=first?'TOTAL · '+rows.length.toLocaleString()+' rows':'';
+      first=false;
+      return '<td>'+cell+'</td>';
     }
-  };
-  reader.readAsArrayBuffer(file);
-}
-function onWorkbookLoaded(){
-  document.getElementById("welcome").hidden = true;
-  document.getElementById("workspace").hidden = false;
-  document.getElementById("loadBtn").textContent = "🔄 Reload / Change File";
-  renderSidebarFoot();
-  renderNav();
-  navigate("overview");
-}
-function renderSidebarFoot(){
-  const rowsInfo = Object.keys(SHEET_CONFIGS).map(id=>{
-    return '<div class="row"><span>'+SHEET_CONFIGS[id].title+'</span><b>'+STATE.data[id].rows.length.toLocaleString()+'</b></div>';
-  }).join("");
-  document.getElementById("sidebarFoot").innerHTML =
-    '<div class="row"><span>File</span></div><div style="word-break:break-all;margin-bottom:6px"><b>'+escapeHtml(STATE.fileName)+'</b></div>'
-    + '<div class="row"><span>Loaded</span><b>'+STATE.loadedAt.toLocaleTimeString()+'</b></div>'
-    + '<div class="row"><span>Databases</span><b>'+STATE.dbUniverse.length+'</b></div>'
-    + '<hr style="border:none;border-top:1px solid var(--line);margin:8px 0">'
-    + rowsInfo;
+    first=false;
+    return '<td class="num">'+fmtCell(c,sumBy(rows,c.key))+'</td>';
+  }).join("")+'</tr>';
 }
 
 /* ---------------------------------------------------------------------- *
- * Wiring                                                                  *
+ * Export                                                                 *
  * ---------------------------------------------------------------------- */
-document.getElementById("loadBtn").addEventListener("click", ()=>document.getElementById("fileInput").click());
-document.getElementById("welcomeLoadBtn").addEventListener("click", ()=>document.getElementById("fileInput").click());
-document.getElementById("fileInput").addEventListener("change", (e)=>{ if(e.target.files[0]) handleFile(e.target.files[0]); e.target.value=""; });
+function activeTableId(){ return tableSectionOf(STATE.current); }
+function safeName(id){ return SHEET_CONFIGS[id].title.replace(/[^\w]+/g,"_"); }
+function filterSummary(id){
+  const st=STATE.sections[id], p=[];
+  if(STATE.globalDb.size) p.push("Databases: "+[...STATE.globalDb].join(", "));
+  if(st.search) p.push('Search: "'+st.search+'"');
+  Object.keys(st.colFilters).forEach(k=>{ if(st.colFilters[k]) p.push(k+" ~ "+st.colFilters[k]); });
+  return p.length?p.join(" · "):"No filters applied (full dataset)";
+}
+function exportExcel(){
+  const id=activeTableId(), cfg=SHEET_CONFIGS[id];
+  const rows=getFilteredSortedRows(id);
+  const aoa=[cfg.columns.map(c=>c.key)];
+  rows.forEach(r=>aoa.push(cfg.columns.map(c=>{
+    const v=r[c.key];
+    return (v===""||v==null)?"":(isNaN(Number(v))?v:Number(v));
+  })));
+  aoa.push(cfg.columns.map(c=>isNumericType(c.type)?sumBy(rows,c.key):""));
+  const ws=XLSX.utils.aoa_to_sheet(aoa);
+  const wb=XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(wb,ws,cfg.title.slice(0,31));
+  XLSX.writeFile(wb,"SAP_Replication_"+safeName(id)+".xlsx");
+}
+function exportHtml(){
+  const id=activeTableId(), cfg=SHEET_CONFIGS[id];
+  const rows=getFilteredSortedRows(id);
+  const charts=[...OVERVIEW_CHARTS,...SECTION_CHARTS].map(c=>{ try{ return c.canvas.toDataURL("image/png"); }catch(e){ return null; } }).filter(Boolean);
+  const numCls=c=>(isNumericType(c.type)||c.type==="pct"||c.type==="pctsmall")?' class="num"':"";
+  const body=rows.map(r=>'<tr>'+cfg.columns.map(c=>{
+    let v=fmtCell(c,r[c.key]);
+    if(c.type==="badge"){ const k=String(r[c.key]||"").trim(); v=k?escapeHtml(k):"—"; }
+    return '<td'+numCls(c)+'>'+v+'</td>';
+  }).join("")+'</tr>').join("");
+  const totals='<tr class="tot">'+cfg.columns.map((c,i)=>isNumericType(c.type)
+    ? '<td class="num">'+fmtCell(c,sumBy(rows,c.key))+'</td>'
+    : '<td>'+(i===0?'TOTAL · '+rows.length.toLocaleString()+' rows':'')+'</td>').join("")+'</tr>';
 
-const dropZone = document.getElementById("dropZone");
-["dragenter","dragover"].forEach(ev=>dropZone.addEventListener(ev,(e)=>{ e.preventDefault(); dropZone.classList.add("drag"); }));
-["dragleave","drop"].forEach(ev=>dropZone.addEventListener(ev,(e)=>{ e.preventDefault(); dropZone.classList.remove("drag"); }));
-dropZone.addEventListener("drop",(e)=>{ const f=e.dataTransfer.files[0]; if(f) handleFile(f); });
+  const html='<!DOCTYPE html><html><head><meta charset="UTF-8"><title>'+escapeHtml(cfg.title)+' — SAP Replication Analytics</title>'
+    +'<style>body{font-family:Segoe UI,Arial,sans-serif;background:#f6f7fb;color:#111827;margin:0;padding:26px}'
+    +'h1{font-size:18px;margin:0 0 4px}.meta{color:#6b7280;font-size:12px;margin-bottom:16px}'
+    +'.charts{display:flex;gap:14px;flex-wrap:wrap;margin-bottom:18px}.chart{background:#fff;border:1px solid #e5e7eb;border-radius:9px;padding:10px;max-width:460px}'
+    +'.chart img{max-width:100%}table{border-collapse:collapse;width:100%;font-size:11.5px;background:#fff}'
+    +'th,td{padding:6px 9px;border-bottom:1px solid #e5e7eb;text-align:left;white-space:nowrap}'
+    +'th{background:#eef1f8;position:sticky;top:0}td.num,th.num{text-align:right}tr.tot td{font-weight:800;background:#eef1f8;border-top:2px solid #cbd5e1}'
+    +'.wrap{overflow:auto;border:1px solid #e5e7eb;border-radius:9px;max-height:80vh}</style></head><body>'
+    +'<h1>SAP Replication Analytics — '+escapeHtml(cfg.title)+'</h1>'
+    +'<div class="meta">Source: '+escapeHtml(STATE.fileName)+' · Exported '+new Date().toLocaleString()+' · '+rows.length.toLocaleString()+' rows · '+escapeHtml(filterSummary(id))+'</div>'
+    +(charts.length?'<div class="charts">'+charts.map(src=>'<div class="chart"><img src="'+src+'"></div>').join("")+'</div>':"")
+    +'<div class="wrap"><table><thead><tr>'+cfg.columns.map(c=>'<th'+numCls(c)+'>'+escapeHtml(c.key)+'</th>').join("")+'</tr></thead><tbody>'
+    +(body||'<tr><td colspan="'+cfg.columns.length+'" style="text-align:center;color:#6b7280;padding:18px">No rows</td></tr>')
+    +totals+'</tbody></table></div></body></html>';
 
-document.getElementById("themeBtn").addEventListener("click", ()=>{
-  const html=document.documentElement;
-  const isDark = html.getAttribute("data-theme")==="dark";
-  html.setAttribute("data-theme", isDark?"light":"dark");
-  document.getElementById("themeBtn").textContent = isDark? "🌙 Dark":"☀️ Light";
-  try{ localStorage.setItem("sapRepTheme", isDark?"light":"dark"); }catch(e){}
+  const a=document.createElement("a");
+  a.href=URL.createObjectURL(new Blob([html],{type:"text/html"}));
+  a.download="SAP_Replication_"+safeName(id)+".html";
+  document.body.appendChild(a); a.click(); a.remove();
+  setTimeout(()=>URL.revokeObjectURL(a.href),4000);
+}
+
+/* ---------------------------------------------------------------------- *
+ * Boot / refresh                                                         *
+ * ---------------------------------------------------------------------- */
+function showError(msg){
+  document.getElementById("errBox").innerHTML='<div class="errbar">'+escapeHtml(msg)+'</div>';
+}
+async function loadData(){
+  const d=window.EMBEDDED_DATA;
+  if(!d||!d.gz) throw new Error("lib/embedded-data.js is missing or empty — regenerate it from the workbook.");
+  await loadEmbeddedData(d.gz,d.name||"Embedded dataset",d.generated||"");
+}
+async function boot(){
+  try{
+    await loadData();
+    document.getElementById("errBox").innerHTML="";
+    navigate(STATE.current);
+  }catch(err){
+    console.error(err);
+    showError("Could not load the report data: "+err.message);
+  }
+}
+async function refreshAll(){
+  const btn=document.getElementById("refreshBtn");
+  btn.disabled=true; const old=btn.textContent; btn.textContent="⏳ Refreshing…";
+  const keep={current:STATE.current, db:new Set(STATE.globalDb), sections:STATE.sections};
+  try{
+    await loadData();
+    STATE.sections=keep.sections; STATE.globalDb=keep.db;
+    document.getElementById("errBox").innerHTML="";
+    navigate(keep.current);
+  }catch(err){
+    console.error(err);
+    showError("Refresh failed: "+err.message);
+  }finally{
+    btn.disabled=false; btn.textContent=old;
+  }
+}
+
+document.getElementById("refreshBtn").addEventListener("click",refreshAll);
+document.getElementById("exportXlsxBtn").addEventListener("click",exportExcel);
+document.getElementById("exportHtmlBtn").addEventListener("click",exportHtml);
+document.getElementById("themeBtn").addEventListener("click",()=>{
+  const html=document.documentElement, dark=html.getAttribute("data-theme")==="dark";
+  html.setAttribute("data-theme",dark?"light":"dark");
+  document.getElementById("themeBtn").textContent=dark?"🌙 Dark":"☀️ Light";
+  try{ localStorage.setItem("sapRepTheme",dark?"light":"dark"); }catch(e){}
   if(STATE.loaded) navigate(STATE.current);
 });
 try{
-  const savedTheme = localStorage.getItem("sapRepTheme");
-  if(savedTheme==="dark"){ document.documentElement.setAttribute("data-theme","dark"); document.getElementById("themeBtn").textContent="☀️ Light"; }
+  if(localStorage.getItem("sapRepTheme")==="dark"){
+    document.documentElement.setAttribute("data-theme","dark");
+    document.getElementById("themeBtn").textContent="☀️ Light";
+  }
 }catch(e){}
 
-function showPicker(message){
-  document.getElementById("welcomeIcon").textContent = "📊";
-  document.getElementById("welcomeTitle").textContent = "Load the SAP Replication Analysis workbook";
-  document.getElementById("welcomeMsg").textContent = message;
-  document.getElementById("spinner").hidden = true;
-  document.getElementById("welcomeLoadBtn").hidden = false;
-  document.getElementById("welcomeHint").hidden = false;
-}
-function base64ToArrayBuffer(b64){
-  const bin = atob(b64);
-  const bytes = new Uint8Array(bin.length);
-  for(let i=0;i<bin.length;i++) bytes[i] = bin.charCodeAt(i);
-  return bytes.buffer;
-}
-function bootFromEmbedded(){
-  const data = window.EMBEDDED_DATA;
-  if(data && data.gz){
-    loadEmbeddedData(data.gz, data.name || "Embedded dataset")
-      .then(onWorkbookLoaded)
-      .catch(err=>{
-        console.error(err);
-        showPicker("The embedded dataset could not be read ("+err.message+"). Choose the .xlsx file manually instead.");
-      });
-    return;
-  }
-  const emb = window.EMBEDDED_WORKBOOK;
-  if(emb && emb.b64){
-    setTimeout(()=>{
-      try{
-        loadWorkbook(base64ToArrayBuffer(emb.b64), emb.name || "Embedded workbook");
-        onWorkbookLoaded();
-      }catch(err){
-        console.error(err);
-        showPicker("The embedded workbook could not be read ("+err.message+"). Choose the .xlsx file manually instead.");
-      }
-    }, 60);
-    return;
-  }
-  showPicker("This report runs entirely inside this browser tab. The Excel file is read on your machine and is never uploaded anywhere.");
-}
-
 renderNav();
-bootFromEmbedded();
+boot();
 </script>
 </body>
 </html>

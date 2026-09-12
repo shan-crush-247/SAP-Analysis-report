@@ -25,12 +25,11 @@ any machine and it behaves identically.
 
 ## What's in it
 
-Eleven sections, reachable from the sidebar:
+Ten sections, reachable from the sidebar:
 
 | Section | What it covers |
 |---|---|
-| Overview | Executive KPIs, storage by database, usage/complexity breakdowns |
-| Databases | Per-database storage, object counts, BI usage coverage |
+| Overview & Databases | Executive KPIs grouped by theme, distribution charts, then per-database storage, object counts and BI usage coverage |
 | Tables | All 40,388 tables with usage classification and size |
 | Columns | Column catalogue with data types, keys, and BI usage counts |
 | Stored Procedures | The 597 BI procedures and their dependency complexity |
@@ -40,9 +39,11 @@ Eleven sections, reachable from the sidebar:
 | Top Insights | The 50 largest tables, storage against BI usage |
 | Insertion Trends | Approximate daily insert/update volume, per table and per database |
 
-Every section supports search, column sorting, dropdown filters, and a global database
-filter. **⤓ Export Excel** and **⤓ Export HTML** save exactly what's currently filtered and
-sorted — the HTML export embeds the charts as images so it stands alone.
+Every section supports per-column filtering, click-to-sort on any column, a section-wide
+search, a database filter, and a TOTAL row summing each numeric column across all filtered
+rows. Column headings match the workbook exactly. **⤓ Export Excel** and **⤓ Export HTML**
+save exactly what's currently filtered and sorted, totals included — the HTML export embeds
+the charts as images so it stands alone.
 
 ## Repository layout
 
