@@ -1,0 +1,1185 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>SAP Replication Analytics</title>
+<style>
+:root{
+  --bg:#f3f5fb; --panel:#ffffff; --panel2:#f8f9fd; --ink:#111827; --ink2:#6b7280; --line:#e2e5ee;
+  --accent:#4f46e5; --accent-ink:#ffffff; --accent2:#0ea5e9;
+  --good:#16a34a; --good-bg:#e8f8ee; --bad:#dc2626; --bad-bg:#fdecec; --warn:#d97706; --warn-bg:#fdf3e3;
+  --muted:#6b7280; --muted-bg:#eef0f5; --shadow:0 1px 2px rgba(16,24,40,.06), 0 1px 3px rgba(16,24,40,.08);
+}
+html[data-theme="dark"]{
+  --bg:#0f1420; --panel:#161c2c; --panel2:#1c2436; --ink:#e7ebf3; --ink2:#94a1b8; --line:#2a3348;
+  --accent:#6366f1; --accent-ink:#ffffff; --accent2:#38bdf8;
+  --good:#4ade80; --good-bg:#123321; --bad:#f87171; --bad-bg:#3a1418; --warn:#fbbf24; --warn-bg:#3a2a0f;
+  --muted:#94a1b8; --muted-bg:#232b3d; --shadow:0 1px 2px rgba(0,0,0,.4);
+}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);font:13.5px/1.45 -apple-system,Segoe UI,Roboto,Arial,sans-serif;}
+h1,h2,h3{margin:0;font-weight:700}
+button{font-family:inherit}
+.app{display:flex;min-height:100vh}
+.sidebar{width:250px;flex:0 0 250px;background:var(--panel);border-right:1px solid var(--line);display:flex;flex-direction:column;position:sticky;top:0;height:100vh}
+.brand{padding:18px 18px 14px;border-bottom:1px solid var(--line)}
+.brand-title{font-size:15.5px;font-weight:800;letter-spacing:.2px}
+.brand-sub{font-size:11.5px;color:var(--ink2);margin-top:2px}
+.nav{flex:1;overflow-y:auto;padding:10px}
+.nav-item{display:flex;align-items:center;gap:9px;padding:9px 11px;border-radius:9px;cursor:pointer;color:var(--ink2);font-weight:600;font-size:12.8px;margin-bottom:2px;user-select:none}
+.nav-item:hover{background:var(--panel2);color:var(--ink)}
+.nav-item.active{background:var(--accent);color:var(--accent-ink)}
+.nav-item.disabled{opacity:.4;cursor:not-allowed;pointer-events:none}
+.nav-icon{width:18px;text-align:center}
+.sidebar-foot{padding:12px 16px;border-top:1px solid var(--line);font-size:11px;color:var(--ink2)}
+.sidebar-foot b{color:var(--ink)}
+.sidebar-foot .row{display:flex;justify-content:space-between;margin-bottom:3px}
+.main{flex:1;min-width:0;display:flex;flex-direction:column}
+.topbar{display:flex;align-items:flex-start;justify-content:space-between;gap:14px;padding:16px 22px;border-bottom:1px solid var(--line);background:var(--panel);flex-wrap:wrap}
+.topbar-title h1{font-size:18px}
+.topbar-sub{font-size:12px;color:var(--ink2);margin-top:2px}
+.topbar-controls{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
+.btn{border:1px solid var(--line);background:var(--panel);color:var(--ink);border-radius:8px;padding:8px 12px;font-size:12.5px;font-weight:600;cursor:pointer;white-space:nowrap}
+.btn:hover{border-color:var(--accent)}
+.btn.primary{background:var(--accent);border-color:var(--accent);color:var(--accent-ink)}
+.btn.primary:hover{filter:brightness(1.06)}
+.btn.big{padding:11px 20px;font-size:13.5px}
+.btn:disabled{opacity:.45;cursor:not-allowed}
+.welcome{flex:1;display:flex;align-items:center;justify-content:center;padding:40px 20px}
+.welcome-card{max-width:460px;text-align:center;background:var(--panel);border:1.5px dashed var(--line);border-radius:16px;padding:40px 32px}
+.welcome-icon{font-size:40px;margin-bottom:10px}
+.welcome-card h2{font-size:17px;margin-bottom:8px}
+.welcome-card p{color:var(--ink2);font-size:12.8px;margin:6px 0}
+.welcome-card .hint{font-size:11.5px;color:var(--ink2);margin-top:12px}
+.welcome-card.drag{border-color:var(--accent);background:var(--panel2)}
+.spinner{width:26px;height:26px;margin:16px auto 4px;border:3px solid var(--line);border-top-color:var(--accent);border-radius:50%;animation:spin .8s linear infinite}
+@keyframes spin{to{transform:rotate(360deg)}}
+.workspace{padding:18px 22px 40px;display:flex;flex-direction:column;gap:16px}
+.controlbar{display:flex;gap:10px;flex-wrap:wrap;align-items:center;justify-content:space-between}
+.controlbar-left,.controlbar-right{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
+.ddwrap{position:relative}
+.dd-panel{position:absolute;top:calc(100% + 6px);left:0;z-index:30;background:var(--panel);border:1px solid var(--line);border-radius:10px;box-shadow:var(--shadow);padding:10px;min-width:230px;max-height:320px;overflow:auto}
+.dd-panel label{display:flex;align-items:center;gap:7px;padding:4px 4px;font-size:12.3px;cursor:pointer;border-radius:6px}
+.dd-panel label:hover{background:var(--panel2)}
+.dd-actions{display:flex;gap:6px;margin-bottom:6px;padding-bottom:6px;border-bottom:1px solid var(--line)}
+.dd-actions button{flex:1;font-size:11px;padding:4px}
+input[type=text],input[type=search],select{border:1px solid var(--line);background:var(--panel);color:var(--ink);border-radius:8px;padding:7.5px 10px;font-size:12.5px;min-width:120px}
+.kpis{display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:10px}
+.kpi{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:13px 15px;box-shadow:var(--shadow)}
+.kpi .lbl{font-size:11px;color:var(--ink2);font-weight:600;text-transform:uppercase;letter-spacing:.3px;margin-bottom:5px}
+.kpi .val{font-size:19px;font-weight:800}
+.charts{display:grid;grid-template-columns:repeat(auto-fit,minmax(360px,1fr));gap:14px}
+.chart-card{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:14px;box-shadow:var(--shadow)}
+.chart-card h3{font-size:12.8px;margin-bottom:10px;color:var(--ink)}
+.chart-card .canvas-wrap{position:relative;height:260px}
+.note-panel{background:var(--panel2);border:1px solid var(--line);border-radius:10px;padding:0;overflow:hidden}
+.note-head{display:flex;align-items:center;justify-content:space-between;padding:10px 14px;cursor:pointer;font-weight:700;font-size:12.5px}
+.note-body{padding:0 14px 14px;font-size:12.2px;color:var(--ink2);line-height:1.55;display:none}
+.note-panel.open .note-body{display:block}
+.table-toolbar{display:flex;gap:8px;flex-wrap:wrap;align-items:center;justify-content:space-between}
+.toolbar-left,.toolbar-right{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
+.count-badge{font-size:11.5px;color:var(--ink2);font-weight:600}
+.table-wrap{background:var(--panel);border:1px solid var(--line);border-radius:12px;overflow:auto;box-shadow:var(--shadow);max-height:640px}
+table.dt{border-collapse:collapse;width:100%;font-size:12.3px}
+table.dt thead th{position:sticky;top:0;background:var(--panel2);text-align:left;padding:9px 12px;font-weight:700;color:var(--ink);border-bottom:1px solid var(--line);white-space:nowrap;cursor:pointer;user-select:none}
+table.dt thead th:hover{color:var(--accent)}
+table.dt thead th .arrow{margin-left:4px;opacity:.5;font-size:10px}
+table.dt tbody td{padding:8px 12px;border-bottom:1px solid var(--line);white-space:nowrap}
+table.dt tbody tr:hover{background:var(--panel2)}
+table.dt td.num,table.dt th.num{text-align:right;font-variant-numeric:tabular-nums}
+table.dt tbody tr:last-child td{border-bottom:none}
+.empty-row td{text-align:center;color:var(--ink2);padding:24px}
+.badge{display:inline-block;padding:2.5px 9px;border-radius:999px;font-size:11px;font-weight:700}
+.b-good{background:var(--good-bg);color:var(--good)}
+.b-bad{background:var(--bad-bg);color:var(--bad)}
+.b-warn{background:var(--warn-bg);color:var(--warn)}
+.b-accent{background:var(--panel2);color:var(--accent)}
+.b-muted,.b-neutral{background:var(--muted-bg);color:var(--muted)}
+.pager{display:flex;align-items:center;justify-content:flex-end;gap:6px;flex-wrap:wrap}
+.pager button{border:1px solid var(--line);background:var(--panel);color:var(--ink);border-radius:7px;padding:5px 9px;font-size:12px;cursor:pointer}
+.pager button:disabled{opacity:.4;cursor:not-allowed}
+.pager .pageinfo{font-size:12px;color:var(--ink2);margin:0 6px}
+::-webkit-scrollbar{width:10px;height:10px}
+::-webkit-scrollbar-thumb{background:var(--line);border-radius:6px}
+@media (max-width:900px){
+  .sidebar{width:74px;flex-basis:74px}
+  .brand-sub,.nav-item span.label{display:none}
+  .sidebar-foot{display:none}
+}
+</style>
+</head>
+<body>
+<div class="app">
+  <aside class="sidebar">
+    <div class="brand">
+      <div class="brand-title">SAP Replication Analytics</div>
+      <div class="brand-sub">Storage &amp; BI Usage · Local Report</div>
+    </div>
+    <nav class="nav" id="nav"></nav>
+    <div class="sidebar-foot" id="sidebarFoot"><div>No workbook loaded</div></div>
+  </aside>
+
+  <main class="main">
+    <header class="topbar">
+      <div class="topbar-title">
+        <h1 id="sectionTitle">Welcome</h1>
+        <div class="topbar-sub" id="sectionSub">Load the SAP Replication analysis workbook to begin</div>
+      </div>
+      <div class="topbar-controls" id="topbarControls">
+        <button class="btn" id="themeBtn" title="Toggle light / dark">🌙 Dark</button>
+        <button class="btn primary" id="loadBtn">📂 Load Excel File</button>
+        <input type="file" id="fileInput" accept=".xlsx,.xls" style="display:none">
+      </div>
+    </header>
+
+    <section class="welcome" id="welcome">
+      <div class="welcome-card" id="dropZone">
+        <div class="welcome-icon" id="welcomeIcon">📊</div>
+        <h2 id="welcomeTitle">Loading the SAP Replication analysis…</h2>
+        <p id="welcomeMsg">Reading the embedded workbook and indexing ~150,000 rows. This takes a few seconds.</p>
+        <div class="spinner" id="spinner"></div>
+        <button class="btn primary big" id="welcomeLoadBtn" hidden>📂 Choose Excel File…</button>
+        <p class="hint" id="welcomeHint" hidden>or drag &amp; drop the .xlsx file here</p>
+      </div>
+    </section>
+
+    <section class="workspace" id="workspace" hidden>
+      <div class="controlbar" id="controlbar"></div>
+      <div class="kpis" id="kpis"></div>
+      <div class="charts" id="charts"></div>
+      <div class="note-panel" id="notePanel" hidden></div>
+      <div class="table-toolbar" id="tableToolbar"></div>
+      <div class="table-wrap" id="tableWrap"></div>
+      <div class="pager" id="pager"></div>
+    </section>
+  </main>
+</div>
+
+<script src="lib/xlsx.full.min.js"></script>
+<script src="lib/chart.umd.min.js"></script>
+<script src="lib/embedded-data.js"></script>
+<script>
+"use strict";
+
+/* ---------------------------------------------------------------------- *
+ * Config: report sections, one per source sheet (01 handled specially)   *
+ * ---------------------------------------------------------------------- */
+const NAV_ITEMS = [
+  {id:"overview", icon:"🏠", label:"Overview"},
+  {id:"databases", icon:"🗄️", label:"Databases"},
+  {id:"tables", icon:"📋", label:"Tables"},
+  {id:"columns", icon:"🧬", label:"Columns"},
+  {id:"sps", icon:"⚙️", label:"Stored Procedures"},
+  {id:"splineage", icon:"🔗", label:"SP → Table Lineage"},
+  {id:"viewlineage", icon:"🕸️", label:"View Lineage"},
+  {id:"unused", icon:"🗑️", label:"Unused Tables"},
+  {id:"insights", icon:"💡", label:"Top Insights"},
+  {id:"insTables", icon:"📈", label:"Insertion Trends (Tables)"},
+  {id:"insDb", icon:"📊", label:"Insertion Trends (Databases)"}
+];
+
+const SHEET_CONFIGS = {
+  databases:{
+    sheetCode:"02", headerRow:0,
+    title:"Databases", sub:"Per-database storage, table/column counts, and BI usage coverage",
+    dbKey:"Database Name",
+    dropRow:(r)=>String(r["Database Name"]||"").trim().toUpperCase()==="TOTAL",
+    defaultSort:{key:"Replicated Data Size (MB)", dir:"desc"},
+    searchable:["Database Name"],
+    columns:[
+      {key:"Database Name", label:"Database", type:"text"},
+      {key:"Table Count", label:"Tables", type:"int"},
+      {key:"View Count", label:"Views", type:"int"},
+      {key:"Proc Count", label:"Procs", type:"int"},
+      {key:"Column Count", label:"Columns", type:"int"},
+      {key:"Index Count", label:"Indexes", type:"int"},
+      {key:"Total Rows", label:"Total Rows", type:"int"},
+      {key:"Data Size (MB)", label:"Data Size", type:"size"},
+      {key:"Index Size (MB)", label:"Index Size", type:"size"},
+      {key:"Replicated Data Size (MB)", label:"Replicated Size", type:"size"},
+      {key:"BI Used Tables", label:"BI Used Tbls", type:"int"},
+      {key:"BI Unused Tables", label:"BI Unused Tbls", type:"int"},
+      {key:"Table Usage %", label:"Table Usage %", type:"pct"},
+      {key:"BI Used Columns", label:"BI Used Cols", type:"int"},
+      {key:"BI Unused Columns", label:"BI Unused Cols", type:"int"},
+      {key:"Column Usage %", label:"Column Usage %", type:"pct"},
+      {key:"SPs Depending on This DB", label:"Dependent SPs", type:"int"}
+    ],
+    kpis:(rows)=>[
+      {label:"Databases", value:fmtInt(rows.length)},
+      {label:"Total Tables", value:fmtInt(sumBy(rows,"Table Count"))},
+      {label:"Total Rows", value:fmtInt(sumBy(rows,"Total Rows"))},
+      {label:"Replicated Storage", value:fmtSize(sumBy(rows,"Replicated Data Size (MB)"))},
+      {label:"Avg Table Usage %", value:fmtPct(avgBy(rows,"Table Usage %"))}
+    ],
+    charts:[{title:"Replicated Storage by Database (Top 15)", build:(rows)=>topNBarChart(rows,"Database Name","Replicated Data Size (MB)",15,"GB",1024)}]
+  },
+  tables:{
+    sheetCode:"03", headerRow:0,
+    title:"Tables", sub:"Every SAP table replicated, with BI usage classification and size",
+    dbKey:"Database Name",
+    defaultSort:{key:"Total Size (MB)", dir:"desc"},
+    searchable:["Database Name","Table Name","Primary Key Columns"],
+    localFilters:[
+      {key:"Usage Classification", label:"Usage"},
+      {key:"BI Used?", label:"BI Used?"}
+    ],
+    columns:[
+      {key:"Database Name", label:"Database", type:"text"},
+      {key:"Table Name", label:"Table", type:"text"},
+      {key:"BI Used?", label:"BI Used?", type:"badge", colorMap:{"Yes":"good","No":"muted"}},
+      {key:"Usage Classification", label:"Usage", type:"badge", colorMap:{"NOT USED":"bad","LOW USAGE":"warn","MEDIUM USAGE":"accent","HIGH USAGE":"good"}},
+      {key:"Available Columns (SAP)", label:"Avail. Cols", type:"int"},
+      {key:"Used Columns", label:"Used Cols", type:"int"},
+      {key:"Unused Columns", label:"Unused Cols", type:"int"},
+      {key:"Column Usage %", label:"Col Usage %", type:"pct"},
+      {key:"Referencing SPs", label:"Ref. SPs", type:"int"},
+      {key:"Referencing Views", label:"Ref. Views", type:"int"},
+      {key:"BI Objects Referencing", label:"BI Objects", type:"int"},
+      {key:"Total Reference Count", label:"Total Refs", type:"int"},
+      {key:"Row Count", label:"Rows", type:"int"},
+      {key:"Data Size (MB)", label:"Data Size", type:"size"},
+      {key:"Index Size (MB)", label:"Index Size", type:"size"},
+      {key:"Total Size (MB)", label:"Total Size", type:"size"},
+      {key:"Index Count", label:"Indexes", type:"int"},
+      {key:"Primary Key Columns", label:"Primary Key", type:"text"},
+      {key:"Optimization Priority Score", label:"Opt. Score", type:"num1"}
+    ],
+    kpis:(rows)=>{
+      const used = rows.filter(r=>String(r["BI Used?"]).trim().toLowerCase()==="yes").length;
+      return [
+        {label:"Tables (filtered)", value:fmtInt(rows.length)},
+        {label:"BI Used", value:fmtInt(used)+" ("+fmtPct(rows.length?used/rows.length*100:0)+")"},
+        {label:"Total Rows", value:fmtInt(sumBy(rows,"Row Count"))},
+        {label:"Total Size", value:fmtSize(sumBy(rows,"Total Size (MB)"))},
+        {label:"Avg Opt. Priority", value:fmtNum1(avgBy(rows,"Optimization Priority Score"))}
+      ];
+    },
+    charts:[{title:"Top 15 Tables by Total Size", build:(rows)=>topNBarChart(rows,"Table Name","Total Size (MB)",15,"GB",1024)}]
+  },
+  columns:{
+    sheetCode:"04", headerRow:0,
+    title:"Columns", sub:"Column-level catalog with data types, keys, and BI usage counts",
+    dbKey:"Database Name",
+    defaultSort:{key:"Usage Count", dir:"desc"},
+    searchable:["Database Name","Table Name","Column Name","Data Type"],
+    localFilters:[
+      {key:"BI Used?", label:"BI Used?"},
+      {key:"Data Type", label:"Data Type"}
+    ],
+    columns:[
+      {key:"Database Name", label:"Database", type:"text"},
+      {key:"Table Name", label:"Table", type:"text"},
+      {key:"Column Name", label:"Column", type:"text"},
+      {key:"BI Used?", label:"BI Used?", type:"badge", colorMap:{"Yes":"good","No":"muted"}},
+      {key:"Data Type", label:"Data Type", type:"text"},
+      {key:"Max Length", label:"Max Len", type:"int"},
+      {key:"Precision", label:"Precision", type:"int"},
+      {key:"Scale", label:"Scale", type:"int"},
+      {key:"Is Nullable", label:"Nullable", type:"text"},
+      {key:"Column Position", label:"Position", type:"int"},
+      {key:"Is Primary Key", label:"PK", type:"text"},
+      {key:"Usage Count", label:"Usage Count", type:"int"},
+      {key:"Usage Types (SELECT / WHERE / JOIN / etc.)", label:"Usage Types", type:"text"},
+      {key:"Top BI Consumers (up to 15)", label:"Top BI Consumers", type:"text"}
+    ],
+    kpis:(rows)=>{
+      const used = rows.filter(r=>String(r["BI Used?"]).trim().toLowerCase()==="yes").length;
+      return [
+        {label:"Columns (filtered)", value:fmtInt(rows.length)},
+        {label:"BI Used", value:fmtInt(used)+" ("+fmtPct(rows.length?used/rows.length*100:0)+")"},
+        {label:"Unused", value:fmtInt(rows.length-used)},
+        {label:"Total Usage Count", value:fmtInt(sumBy(rows,"Usage Count"))}
+      ];
+    },
+    charts:[{title:"Top 15 Columns by Usage Count", build:(rows)=>topNBarChart(rows,r=>r["Table Name"]+"."+r["Column Name"],"Usage Count",15,"",1)}]
+  },
+  sps:{
+    sheetCode:"05", headerRow:0,
+    title:"Stored Procedures", sub:"BI stored procedures and their dependency complexity on SAP tables",
+    dbKey:null,
+    defaultSort:{key:"ComplexityScore", dir:"desc"},
+    searchable:["SPName"],
+    localFilters:[
+      {key:"UsesSAP", label:"Uses SAP?"},
+      {key:"DependencyComplexity", label:"Complexity"}
+    ],
+    columns:[
+      {key:"SPName", label:"Stored Procedure", type:"text"},
+      {key:"UsesSAP", label:"Uses SAP?", type:"badge", colorMap:{"YES":"good","NO":"muted"}},
+      {key:"SAPTablesCount", label:"SAP Tables", type:"int"},
+      {key:"SAPColumnsCount", label:"SAP Columns", type:"int"},
+      {key:"DirectDependencies", label:"Direct Deps", type:"int"},
+      {key:"IndirectDependencies", label:"Indirect Deps", type:"int"},
+      {key:"ViewsUsed", label:"Views Used", type:"int"},
+      {key:"HasDynamicSQL", label:"Dynamic SQL", type:"badge", colorMap:{"YES":"warn","NO":"muted"}},
+      {key:"ComplexityScore", label:"Complexity Score", type:"int"},
+      {key:"DependencyComplexity", label:"Complexity", type:"badge", colorMap:{"Very High":"bad","High":"warn","Medium":"accent","Low":"good"}}
+    ],
+    kpis:(rows)=>{
+      const usesSap = rows.filter(r=>String(r.UsesSAP).trim().toUpperCase()==="YES").length;
+      return [
+        {label:"Stored Procedures", value:fmtInt(rows.length)},
+        {label:"Uses SAP Data", value:fmtInt(usesSap)+" ("+fmtPct(rows.length?usesSap/rows.length*100:0)+")"},
+        {label:"Avg Complexity Score", value:fmtNum1(avgBy(rows,"ComplexityScore"))},
+        {label:"Max SAP Tables Touched", value:fmtInt(maxBy(rows,"SAPTablesCount"))}
+      ];
+    },
+    charts:[{title:"Top 15 SPs by Complexity Score", build:(rows)=>topNBarChart(rows,"SPName","ComplexityScore",15,"",1)}]
+  },
+  splineage:{
+    sheetCode:"06", headerRow:1, noteRow:0,
+    title:"SP → Table Lineage", sub:"Which SAP tables each stored procedure depends on, direct or via views",
+    dbKey:"SAPDatabase",
+    defaultSort:{key:"SPName", dir:"asc"},
+    searchable:["SPName","SAPTable","SchemaName","DependencyPath"],
+    localFilters:[{key:"DependencyType", label:"Dependency"}],
+    columns:[
+      {key:"SPName", label:"Stored Procedure", type:"text"},
+      {key:"SAPDatabase", label:"SAP Database", type:"text"},
+      {key:"SchemaName", label:"Schema", type:"text"},
+      {key:"SAPTable", label:"SAP Table", type:"text"},
+      {key:"DependencyType", label:"Type", type:"badge", colorMap:{"Direct":"good","Indirect":"accent"}},
+      {key:"IntermediateView", label:"Via View", type:"text"},
+      {key:"DependencyPath", label:"Dependency Path", type:"text"},
+      {key:"DependencyLevel", label:"Level", type:"int"}
+    ],
+    kpis:(rows)=>[
+      {label:"Dependency Rows", value:fmtInt(rows.length)},
+      {label:"Distinct SPs", value:fmtInt(distinctCount(rows,"SPName"))},
+      {label:"Distinct SAP Tables", value:fmtInt(distinctCount(rows,"SAPTable"))},
+      {label:"Direct Links", value:fmtInt(rows.filter(r=>r.DependencyType==="Direct").length)}
+    ],
+    charts:[{title:"Rows by Dependency Type", build:(rows)=>countByChart(rows,"DependencyType")}]
+  },
+  viewlineage:{
+    sheetCode:"07", headerRow:1, noteRow:0,
+    title:"View Lineage", sub:"BI views traced back to the SAP tables and columns they read",
+    dbKey:"SAPDatabase",
+    defaultSort:{key:"ViewName", dir:"asc"},
+    searchable:["ViewName","ReferencedObject","SAPSchemaOrRefSchema","SAPColumns"],
+    localFilters:[{key:"ReferenceCategory", label:"Category"}],
+    columns:[
+      {key:"ViewName", label:"View", type:"text"},
+      {key:"ParentObjects", label:"Used By (SPs)", type:"text"},
+      {key:"SAPDatabase", label:"SAP Database", type:"text"},
+      {key:"SAPSchemaOrRefSchema", label:"Schema", type:"text"},
+      {key:"ReferencedObject", label:"Referenced Object", type:"text"},
+      {key:"SAPColumns", label:"SAP Columns", type:"text"},
+      {key:"DependencyLevel", label:"Level", type:"int"},
+      {key:"IsFurtherNestedView", label:"Further Nested?", type:"text"},
+      {key:"ReferenceCategory", label:"Category", type:"badge", colorMap:{"SAP":"accent"}}
+    ],
+    kpis:(rows)=>[
+      {label:"Lineage Rows", value:fmtInt(rows.length)},
+      {label:"Distinct Views", value:fmtInt(distinctCount(rows,"ViewName"))},
+      {label:"Distinct SAP Objects", value:fmtInt(distinctCount(rows,"ReferencedObject"))}
+    ],
+    charts:[{title:"Rows by Reference Category", build:(rows)=>countByChart(rows,"ReferenceCategory")}]
+  },
+  unused:{
+    sheetCode:"08", headerRow:0,
+    title:"Unused Tables", sub:"SAP tables replicated but not referenced anywhere in BI",
+    dbKey:"DatabaseName",
+    defaultSort:{key:"TotalSizeMB", dir:"desc"},
+    searchable:["DatabaseName","TableName","SchemaName"],
+    columns:[
+      {key:"DatabaseName", label:"Database", type:"text"},
+      {key:"SchemaName", label:"Schema", type:"text"},
+      {key:"TableName", label:"Table", type:"text"},
+      {key:"ColumnCount", label:"Columns", type:"int"},
+      {key:"TotalSizeMB", label:"Total Size", type:"size"},
+      {key:"TableRowCount", label:"Rows", type:"int"}
+    ],
+    kpis:(rows)=>[
+      {label:"Unused Tables", value:fmtInt(rows.length)},
+      {label:"Reclaimable Storage", value:fmtSize(sumBy(rows,"TotalSizeMB"))},
+      {label:"Total Rows (unused)", value:fmtInt(sumBy(rows,"TableRowCount"))},
+      {label:"Databases Affected", value:fmtInt(distinctCount(rows,"DatabaseName"))}
+    ],
+    charts:[{title:"Top 15 Unused Tables by Size", build:(rows)=>topNBarChart(rows,"TableName","TotalSizeMB",15,"GB",1024)}]
+  },
+  insights:{
+    sheetCode:"09", headerRow:1, noteRow:0,
+    title:"Top Insights", sub:"The 50 largest tables in the replica, storage & BI-usage side by side",
+    dbKey:"DatabaseName",
+    defaultSort:{key:"TotalSizeMB", dir:"desc"},
+    searchable:["DatabaseName","TableName","SchemaName"],
+    localFilters:[{key:"BIUsed", label:"BI Used?"}],
+    columns:[
+      {key:"DatabaseName", label:"Database", type:"text"},
+      {key:"SchemaName", label:"Schema", type:"text"},
+      {key:"TableName", label:"Table", type:"text"},
+      {key:"TableRowCount", label:"Rows", type:"int"},
+      {key:"DataSizeMB", label:"Data Size", type:"size"},
+      {key:"IndexSizeMB", label:"Index Size", type:"size"},
+      {key:"TotalSizeMB", label:"Total Size", type:"size"},
+      {key:"BIUsed", label:"BI Used?", type:"badge", colorMap:{"YES":"good","NO":"bad"}},
+      {key:"UsedColumns", label:"Used Cols", type:"int"},
+      {key:"AvailableColumns", label:"Avail. Cols", type:"int"}
+    ],
+    kpis:(rows)=>[
+      {label:"Tables Listed", value:fmtInt(rows.length)},
+      {label:"Combined Size", value:fmtSize(sumBy(rows,"TotalSizeMB"))},
+      {label:"BI Used", value:fmtInt(rows.filter(r=>String(r.BIUsed).toUpperCase()==="YES").length)},
+      {label:"Not BI Used", value:fmtInt(rows.filter(r=>String(r.BIUsed).toUpperCase()==="NO").length)}
+    ],
+    charts:[{title:"Top 15 by Total Size", build:(rows)=>topNBarChart(rows,"TableName","TotalSizeMB",15,"GB",1024)}]
+  },
+  insTables:{
+    sheetCode:"10", headerRow:2, noteRow:0,
+    title:"Insertion Trends (Tables)", sub:"Approximate daily insert/update volume, sampled from each table's busiest month",
+    dbKey:"Database Name",
+    defaultSort:{key:"Avg Inserts Per Day (approx)", dir:"desc"},
+    searchable:["Database Name","Table Name"],
+    localFilters:[{key:"Status / Note", label:"Status"}],
+    columns:[
+      {key:"Database Name", label:"Database", type:"text"},
+      {key:"Table Name", label:"Table", type:"text"},
+      {key:"Total Row Count", label:"Total Rows", type:"int"},
+      {key:"Busiest Month (Insert/CreateDate)", label:"Busiest Month (Insert)", type:"text"},
+      {key:"Highest Inserts In A Day", label:"Max Inserts/Day", type:"int"},
+      {key:"Lowest Inserts In A Day", label:"Min Inserts/Day", type:"int"},
+      {key:"Avg Inserts Per Day (approx)", label:"Avg Inserts/Day", type:"num1"},
+      {key:"Avg Inserts Per Day % of Total Rows", label:"Avg Insert % / Day", type:"pctsmall"},
+      {key:"Busiest Month (Update)", label:"Busiest Month (Update)", type:"text"},
+      {key:"Highest Updates In A Day", label:"Max Updates/Day", type:"int"},
+      {key:"Lowest Updates In A Day", label:"Min Updates/Day", type:"int"},
+      {key:"Avg Updates Per Day (approx)", label:"Avg Updates/Day", type:"num1"},
+      {key:"Avg Updates Per Day % of Total Rows", label:"Avg Update % / Day", type:"pctsmall"},
+      {key:"Status / Note", label:"Status", type:"badge", colorMap:{"OK":"good"}}
+    ],
+    kpis:(rows)=>[
+      {label:"Tables Sampled", value:fmtInt(rows.length)},
+      {label:"Sum Avg Inserts/Day", value:fmtInt(sumBy(rows,"Avg Inserts Per Day (approx)"))},
+      {label:"Sum Avg Updates/Day", value:fmtInt(sumBy(rows,"Avg Updates Per Day (approx)"))}
+    ],
+    charts:[{title:"Top 15 Tables by Avg Inserts/Day", build:(rows)=>topNBarChart(rows,"Table Name","Avg Inserts Per Day (approx)",15,"",1)}]
+  },
+  insDb:{
+    sheetCode:"11", headerRow:2, noteRow:0,
+    title:"Insertion Trends (Databases)", sub:"Sampled-table insert/update volume rolled up per database",
+    dbKey:"Database Name",
+    defaultSort:{key:"Sum of Avg Manipulation/Day (sampled tables)", dir:"desc"},
+    searchable:["Database Name"],
+    columns:[
+      {key:"Database Name", label:"Database", type:"text"},
+      {key:"Tables Sampled In This DB", label:"Tables Sampled", type:"int"},
+      {key:"Tables With Measurable Insertion Data", label:"With Data", type:"int"},
+      {key:"Sum of Avg Inserts/Day (sampled tables)", label:"Avg Inserts/Day", type:"num1"},
+      {key:"Sum of Avg Updates/Day (sampled tables)", label:"Avg Updates/Day", type:"num1"},
+      {key:"Sum of Avg Manipulation/Day (sampled tables)", label:"Avg Manipulation/Day", type:"num1"}
+    ],
+    kpis:(rows)=>[
+      {label:"Databases", value:fmtInt(rows.length)},
+      {label:"Total Avg Manipulation/Day", value:fmtInt(sumBy(rows,"Sum of Avg Manipulation/Day (sampled tables)"))}
+    ],
+    charts:[{title:"Avg Manipulation/Day by Database", build:(rows)=>topNBarChart(rows,"Database Name","Sum of Avg Manipulation/Day (sampled tables)",20,"",1)}]
+  }
+};
+
+/* ---------------------------------------------------------------------- *
+ * State                                                                  *
+ * ---------------------------------------------------------------------- */
+const STATE = {
+  loaded:false,
+  fileName:"",
+  loadedAt:null,
+  data:{},          // sectionId -> {rows:[...], note:string|null}
+  overview:null,    // special parsed structure for sheet 01
+  dbUniverse:[],    // union of DB names across sheets that carry a DB column
+  globalDb:new Set(),
+  current:"overview",
+  sections:{}       // sectionId -> {search, local:{}, sort:{key,dir}, page, pageSize}
+};
+let ACTIVE_CHARTS = [];
+
+/* ---------------------------------------------------------------------- *
+ * Formatting helpers                                                     *
+ * ---------------------------------------------------------------------- */
+function escapeHtml(s){
+  return String(s).replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+}
+function toNum(v){ if(v===""||v==null) return NaN; const n=Number(v); return isNaN(n)?NaN:n; }
+function fmtInt(v){ const n=toNum(v); return isNaN(n)?"—":Math.round(n).toLocaleString(); }
+function fmtNum1(v){ const n=toNum(v); return isNaN(n)?"—":n.toFixed(1); }
+function fmtPct(v){ const n=toNum(v); return isNaN(n)?"—":n.toFixed(2)+"%"; }
+function fmtPctSmall(v){ const n=toNum(v); if(isNaN(n)) return "—"; return (Math.abs(n)<0.01&&n!==0? n.toFixed(4): n.toFixed(2))+"%"; }
+function fmtSize(mb){
+  const n=toNum(mb); if(isNaN(n)) return "—";
+  const abs=Math.abs(n);
+  if(abs>=1024*1024) return (n/1024/1024).toFixed(2)+" TB";
+  if(abs>=1024) return (n/1024).toFixed(2)+" GB";
+  if(abs>=1) return n.toFixed(2)+" MB";
+  return (n*1024).toFixed(1)+" KB";
+}
+function fmtCell(col,val){
+  if(val===""||val==null) return "—";
+  switch(col.type){
+    case "int": return fmtInt(val);
+    case "num1": return fmtNum1(val);
+    case "pct": return fmtPct(val);
+    case "pctsmall": return fmtPctSmall(val);
+    case "size": return fmtSize(val);
+    case "badge": return badgeHtml(val, col.colorMap);
+    default: return escapeHtml(val);
+  }
+}
+function badgeHtml(value, colorMap){
+  const key=String(value).trim();
+  if(!key) return "—";
+  let cls="neutral";
+  if(colorMap){
+    const found=Object.keys(colorMap).find(k=>k.toLowerCase()===key.toLowerCase());
+    if(found) cls=colorMap[found];
+  }
+  return '<span class="badge b-'+cls+'">'+escapeHtml(key)+'</span>';
+}
+function sumBy(rows,key){ let s=0; for(const r of rows){ const n=toNum(r[key]); if(!isNaN(n)) s+=n; } return s; }
+function avgBy(rows,key){ let s=0,c=0; for(const r of rows){ const n=toNum(r[key]); if(!isNaN(n)){ s+=n; c++; } } return c?s/c:0; }
+function maxBy(rows,key){ let m=null; for(const r of rows){ const n=toNum(r[key]); if(!isNaN(n) && (m===null||n>m)) m=n; } return m||0; }
+function distinctCount(rows,key){ return new Set(rows.map(r=>r[key])).size; }
+
+/* ---------------------------------------------------------------------- *
+ * Workbook parsing                                                       *
+ * ---------------------------------------------------------------------- */
+function findSheet(wb, code){
+  const exact = wb.SheetNames.find(n=>n.startsWith(code+"_"));
+  if(exact) return exact;
+  return wb.SheetNames.find(n=>n.indexOf(code)===0) || null;
+}
+/* Some sheets in this workbook carry a !ref range that under-reports the real used
+   area, and sheet_to_json trusts !ref — rebuild it from the actual cell addresses. */
+function fixSheetRange(ws){
+  if(!ws) return ws;
+  let maxR=-1, maxC=-1, any=false;
+  for(const addr in ws){
+    if(addr[0]==="!") continue;
+    const cell = XLSX.utils.decode_cell(addr);
+    if(cell.r>maxR) maxR=cell.r;
+    if(cell.c>maxC) maxC=cell.c;
+    any=true;
+  }
+  if(any) ws["!ref"] = XLSX.utils.encode_range({s:{r:0,c:0}, e:{r:maxR, c:maxC}});
+  return ws;
+}
+function sheetToAoa(wb, name){
+  const ws = fixSheetRange(wb.Sheets[name]);
+  return XLSX.utils.sheet_to_json(ws, {header:1, raw:true, defval:""});
+}
+function aoaToObjects(aoa, headerRowIdx){
+  const headerRow = aoa[headerRowIdx] || [];
+  const headers = headerRow.map(h=>String(h).trim());
+  const rows=[];
+  for(let i=headerRowIdx+1;i<aoa.length;i++){
+    const r=aoa[i];
+    if(!r || r.every(v=>v===""||v==null)) continue;
+    const obj={};
+    let any=false;
+    headers.forEach((h,ci)=>{
+      if(!h) return;
+      const v = r[ci]!==undefined?r[ci]:"";
+      obj[h]=v;
+      if(v!=="") any=true;
+    });
+    if(any) rows.push(obj);
+  }
+  return rows;
+}
+/* The dashboard sheet is a hand-laid-out executive summary: KPI label/value row pairs at
+   the top, then several small two-column tables sitting side by side further down. Blocks
+   are located by their own heading text rather than fixed cell coordinates, so the parse
+   survives rows or columns being inserted upstream. */
+function overviewCell(aoa,r,c){ const row=aoa[r]; const v=row?row[c]:""; return v==null?"":v; }
+function overviewText(aoa,r,c){ return String(overviewCell(aoa,r,c)).trim(); }
+
+function findAnchor(aoa, label, rightLabel){
+  for(let r=0;r<aoa.length;r++){
+    const row = aoa[r]||[];
+    for(let c=0;c<row.length;c++){
+      if(overviewText(aoa,r,c).toLowerCase()===label.toLowerCase()
+        && overviewText(aoa,r,c+1).toLowerCase()===rightLabel.toLowerCase()) return {r,c};
+    }
+  }
+  return null;
+}
+function readAnchoredPairs(aoa, anchor, maxRows){
+  const out=[];
+  if(!anchor) return out;
+  for(let r=anchor.r+1; r<aoa.length && out.length<maxRows; r++){
+    const label = overviewText(aoa,r,anchor.c);
+    if(label==="") break;
+    out.push({label, value: toNum(overviewCell(aoa,r,anchor.c+1))});
+  }
+  return out;
+}
+function parseOverviewSheet(aoa){
+  const ov = {kpiA:[], kpiB:[], dbStorage:[], status:[], usageLevel:[], spCategory:[]};
+
+  /* KPI blocks: a row of text labels directly above a row of values in the same columns.
+     Limited to the top of the sheet so the two-column tables lower down aren't mistaken
+     for KPI rows. */
+  const blocks=[];
+  for(let r=0;r<Math.min(aoa.length-1,30);r++){
+    const row = aoa[r]||[];
+    const cols=[];
+    for(let c=0;c<row.length;c++){ if(overviewText(aoa,r,c)!=="") cols.push(c); }
+    if(cols.length<3) continue;
+    if(cols.some(c=>overviewText(aoa,r,c)!=="" && !isNaN(Number(overviewText(aoa,r,c))))) continue;
+    if(!cols.every(c=>overviewText(aoa,r+1,c)!=="")) continue;
+    blocks.push(cols.map(c=>({label:overviewText(aoa,r,c), value:overviewText(aoa,r+1,c)})));
+    r++;
+  }
+  ov.kpiA = blocks[0]||[];
+  ov.kpiB = blocks[1]||[];
+
+  ov.status      = readAnchoredPairs(aoa, findAnchor(aoa,"Status","Tables"), 10);
+  ov.usageLevel  = readAnchoredPairs(aoa, findAnchor(aoa,"Usage Level","Tables"), 10);
+  ov.spCategory  = readAnchoredPairs(aoa, findAnchor(aoa,"SP Category","Count"), 10);
+  ov.dbStorage   = readAnchoredPairs(aoa, findAnchor(aoa,"Database","Storage GB"), 100)
+                     .map(p=>({db:p.label, gb:p.value}));
+  return ov;
+}
+
+function loadWorkbook(arrayBuffer, fileName){
+  const wb = XLSX.read(new Uint8Array(arrayBuffer), {type:"array", cellDates:false, raw:true});
+
+  const ovName = findSheet(wb,"01");
+  STATE.overview = ovName ? parseOverviewSheet(sheetToAoa(wb, ovName)) : {kpiA:[],kpiB:[],dbStorage:[],status:[],usageLevel:[],spCategory:[]};
+
+  STATE.data = {};
+  Object.keys(SHEET_CONFIGS).forEach(id=>{
+    const cfg = SHEET_CONFIGS[id];
+    const name = findSheet(wb, cfg.sheetCode);
+    if(!name){ STATE.data[id]={rows:[],note:null}; return; }
+    const aoa = sheetToAoa(wb, name);
+    let rows = aoaToObjects(aoa, cfg.headerRow);
+    if(cfg.dropRow) rows = rows.filter(r=>!cfg.dropRow(r));
+    const note = (cfg.noteRow!=null && aoa[cfg.noteRow] && aoa[cfg.noteRow][0]) ? String(aoa[cfg.noteRow][0]) : null;
+    STATE.data[id] = {rows, note};
+    STATE.sections[id] = {search:"", local:{}, sort:Object.assign({},cfg.defaultSort), page:1, pageSize:50};
+  });
+
+  /* The DB summary sheet is the authoritative list of database names. Other sheets spell
+     the same database in mixed case (dbo/DBO, RRLive/RRLIVE), so filtering matches
+     case-insensitively rather than treating each spelling as its own database. */
+  const canonical = (STATE.data.databases ? STATE.data.databases.rows : [])
+    .map(r=>String(r["Database Name"]||"").trim()).filter(Boolean);
+  if(canonical.length){
+    STATE.dbUniverse = [...new Set(canonical)].sort((a,b)=>a.localeCompare(b));
+  } else {
+    const dbSet = new Set();
+    Object.keys(SHEET_CONFIGS).forEach(id=>{
+      const cfg=SHEET_CONFIGS[id];
+      if(!cfg.dbKey) return;
+      STATE.data[id].rows.forEach(r=>{ const v=r[cfg.dbKey]; if(v) dbSet.add(String(v)); });
+    });
+    STATE.dbUniverse = [...dbSet].sort((a,b)=>a.localeCompare(b));
+  }
+
+  STATE.loaded = true;
+  STATE.fileName = fileName;
+  STATE.loadedAt = new Date();
+}
+
+/* ---------------------------------------------------------------------- *
+ * Filtering / sorting                                                    *
+ * ---------------------------------------------------------------------- */
+function getFilteredSortedRows(id){
+  const cfg = SHEET_CONFIGS[id];
+  const st = STATE.sections[id];
+  let rows = STATE.data[id].rows;
+
+  if(cfg.dbKey && STATE.globalDb.size){
+    const sel = new Set([...STATE.globalDb].map(d=>d.toUpperCase()));
+    rows = rows.filter(r=>sel.has(String(r[cfg.dbKey]).trim().toUpperCase()));
+  }
+  if(cfg.localFilters){
+    cfg.localFilters.forEach(lf=>{
+      const val = st.local[lf.key];
+      if(val) rows = rows.filter(r=>String(r[lf.key])===val);
+    });
+  }
+  if(st.search && cfg.searchable && cfg.searchable.length){
+    const q = st.search.trim().toLowerCase();
+    if(q){
+      rows = rows.filter(r=>cfg.searchable.some(k=>String(r[k]||"").toLowerCase().includes(q)));
+    }
+  }
+  if(st.sort && st.sort.key){
+    const {key,dir} = st.sort;
+    const mul = dir==="desc"?-1:1;
+    rows = rows.slice().sort((a,b)=>{
+      const av=a[key], bv=b[key];
+      const an=toNum(av), bn=toNum(bv);
+      if(!isNaN(an) && !isNaN(bn)) return (an-bn)*mul;
+      return String(av).localeCompare(String(bv))*mul;
+    });
+  }
+  return rows;
+}
+
+/* ---------------------------------------------------------------------- *
+ * Chart builders                                                         *
+ * ---------------------------------------------------------------------- */
+function chartColors(n){
+  const palette=["#4f46e5","#0ea5e9","#16a34a","#d97706","#dc2626","#9333ea","#0891b2","#65a30d","#db2777","#4b5563"];
+  const out=[]; for(let i=0;i<n;i++) out.push(palette[i%palette.length]); return out;
+}
+function themeInk(){ return getComputedStyle(document.documentElement).getPropertyValue("--ink").trim(); }
+function themeLine(){ return getComputedStyle(document.documentElement).getPropertyValue("--line").trim(); }
+
+function topNBarChart(rows, labelKey, valueKey, n, unitSuffix, divisor){
+  const getLabel = typeof labelKey==="function"?labelKey:(r)=>r[labelKey];
+  const items = rows.map(r=>({label:String(getLabel(r)), value:toNum(r[valueKey])||0}))
+    .sort((a,b)=>b.value-a.value).slice(0,n);
+  return {
+    type:"bar",
+    data:{
+      labels: items.map(it=>it.label.length>28?it.label.slice(0,26)+"…":it.label),
+      datasets:[{
+        label: valueKey + (unitSuffix?(" ("+unitSuffix+")"):""),
+        data: items.map(it=>divisor?+(it.value/divisor).toFixed(2):it.value),
+        backgroundColor: chartColors(items.length)
+      }]
+    },
+    options: baseChartOpts({indexAxis:"y"})
+  };
+}
+function countByChart(rows, key){
+  const counts = new Map();
+  rows.forEach(r=>{ const k=String(r[key]||"—"); counts.set(k,(counts.get(k)||0)+1); });
+  const labels=[...counts.keys()], data=[...counts.values()];
+  return {
+    type:"doughnut",
+    data:{ labels, datasets:[{ data, backgroundColor: chartColors(labels.length) }] },
+    options: baseChartOpts({})
+  };
+}
+function baseChartOpts(extra){
+  const ink=themeInk(), line=themeLine();
+  return Object.assign({
+    responsive:true, maintainAspectRatio:false, animation:false,
+    plugins:{ legend:{ labels:{ color:ink, font:{size:11} } } },
+    scales: extra.indexAxis==="y" ? {
+      x:{ ticks:{color:ink,font:{size:10}}, grid:{color:line} },
+      y:{ ticks:{color:ink,font:{size:10}}, grid:{display:false} }
+    } : undefined
+  }, extra);
+}
+
+/* ---------------------------------------------------------------------- *
+ * Navigation & rendering                                                 *
+ * ---------------------------------------------------------------------- */
+function renderNav(){
+  const nav = document.getElementById("nav");
+  nav.innerHTML = NAV_ITEMS.map(it=>{
+    const cls = ["nav-item"];
+    if(it.id===STATE.current) cls.push("active");
+    if(!STATE.loaded) cls.push("disabled");
+    return '<div class="'+cls.join(" ")+'" data-nav="'+it.id+'"><span class="nav-icon">'+it.icon+'</span><span class="label">'+it.label+'</span></div>';
+  }).join("");
+  nav.querySelectorAll(".nav-item").forEach(el=>{
+    el.addEventListener("click", ()=>{ if(STATE.loaded) navigate(el.dataset.nav); });
+  });
+}
+function navigate(id){
+  STATE.current = id;
+  renderNav();
+  document.getElementById("sectionTitle").textContent = id==="overview" ? "Overview" : SHEET_CONFIGS[id].title;
+  document.getElementById("sectionSub").textContent = id==="overview"
+    ? "Executive summary across all "+STATE.dbUniverse.length+" replicated databases"
+    : SHEET_CONFIGS[id].sub;
+  if(id==="overview") renderOverview(); else renderDataSection(id);
+}
+function destroyCharts(){ ACTIVE_CHARTS.forEach(c=>{ try{c.destroy();}catch(e){} }); ACTIVE_CHARTS=[]; }
+
+function renderOverview(){
+  destroyCharts();
+  document.getElementById("controlbar").innerHTML = "";
+  document.getElementById("notePanel").hidden = true;
+  document.getElementById("tableToolbar").innerHTML = "";
+  document.getElementById("pager").innerHTML = "";
+
+  const ov = STATE.overview;
+  const kpiHtml = (list)=> list.map(k=>'<div class="kpi"><div class="lbl">'+escapeHtml(k.label)+'</div><div class="val">'+escapeHtml(k.value)+'</div></div>').join("");
+  document.getElementById("kpis").innerHTML = kpiHtml(ov.kpiA) + kpiHtml(ov.kpiB);
+
+  const chartsEl = document.getElementById("charts");
+  chartsEl.innerHTML = [
+    ['ovChartStorage','Replicated Storage by Database (GB)'],
+    ['ovChartStatus','Table Usage Status'],
+    ['ovChartLevel','Usage Level (used tables)'],
+    ['ovChartSp','Stored Procedure Category']
+  ].map(([cid,title])=>'<div class="chart-card"><h3>'+title+'</h3><div class="canvas-wrap"><canvas id="'+cid+'"></canvas></div></div>').join("");
+
+  document.getElementById("tableWrap").innerHTML = "";
+
+  const storItems = ov.dbStorage.slice().sort((a,b)=>b.gb-a.gb).slice(0,18);
+  ACTIVE_CHARTS.push(new Chart(document.getElementById("ovChartStorage"), {
+    type:"bar",
+    data:{ labels: storItems.map(i=>i.db), datasets:[{label:"Storage (GB)", data:storItems.map(i=>i.gb), backgroundColor: chartColors(storItems.length)}] },
+    options: baseChartOpts({indexAxis:"y"})
+  }));
+  ACTIVE_CHARTS.push(new Chart(document.getElementById("ovChartStatus"), {
+    type:"doughnut",
+    data:{ labels: ov.status.map(s=>s.label), datasets:[{data: ov.status.map(s=>s.value), backgroundColor: chartColors(ov.status.length)}] },
+    options: baseChartOpts({})
+  }));
+  ACTIVE_CHARTS.push(new Chart(document.getElementById("ovChartLevel"), {
+    type:"doughnut",
+    data:{ labels: ov.usageLevel.map(s=>s.label), datasets:[{data: ov.usageLevel.map(s=>s.value), backgroundColor: chartColors(ov.usageLevel.length)}] },
+    options: baseChartOpts({})
+  }));
+  ACTIVE_CHARTS.push(new Chart(document.getElementById("ovChartSp"), {
+    type:"doughnut",
+    data:{ labels: ov.spCategory.map(s=>s.label), datasets:[{data: ov.spCategory.map(s=>s.value), backgroundColor: chartColors(ov.spCategory.length)}] },
+    options: baseChartOpts({})
+  }));
+}
+
+function dbFilterDropdown(){
+  const options = STATE.dbUniverse.map(db=>{
+    const checked = STATE.globalDb.size===0 || STATE.globalDb.has(db) ? "" : "";
+    const isOn = STATE.globalDb.has(db);
+    return '<label><input type="checkbox" data-db="'+escapeHtml(db)+'" '+(isOn?"checked":"")+'> '+escapeHtml(db)+'</label>';
+  }).join("");
+  const activeLabel = STATE.globalDb.size ? STATE.globalDb.size+" DB selected" : "All Databases";
+  return '<div class="ddwrap" id="dbFilterWrap">'
+    + '<button class="btn" id="dbFilterBtn">🗄️ '+activeLabel+' ▾</button>'
+    + '<div class="dd-panel" id="dbFilterPanel" style="display:none">'
+    + '<div class="dd-actions"><button id="dbAllBtn">All</button><button id="dbNoneBtn">None</button></div>'
+    + options
+    + '</div></div>';
+}
+
+function renderDataSection(id){
+  const cfg = SHEET_CONFIGS[id];
+  const st = STATE.sections[id];
+
+  // Control bar: global DB filter (if applicable) + export buttons
+  const controlbar = document.getElementById("controlbar");
+  controlbar.innerHTML =
+    '<div class="controlbar-left">' + (cfg.dbKey ? dbFilterDropdown() : "") + '</div>'
+    + '<div class="controlbar-right">'
+    + '<button class="btn" id="exportXlsxBtn">⤓ Export Excel</button>'
+    + '<button class="btn" id="exportHtmlBtn">⤓ Export HTML</button>'
+    + '</div>';
+  if(cfg.dbKey) wireDbFilter();
+  document.getElementById("exportXlsxBtn").addEventListener("click", ()=>exportExcel(id));
+  document.getElementById("exportHtmlBtn").addEventListener("click", ()=>exportHtml(id));
+
+  // Note panel
+  const note = STATE.data[id].note;
+  const notePanel = document.getElementById("notePanel");
+  if(note){
+    notePanel.hidden = false;
+    notePanel.innerHTML = '<div class="note-head" id="noteHead"><span>ℹ️ Methodology / Notes</span><span id="noteArrow">▾</span></div><div class="note-body">'+escapeHtml(note)+'</div>';
+    notePanel.classList.remove("open");
+    document.getElementById("noteHead").addEventListener("click", ()=>notePanel.classList.toggle("open"));
+  } else {
+    notePanel.hidden = true;
+  }
+
+  // Table toolbar: search + local filters + pageSize
+  const toolbar = document.getElementById("tableToolbar");
+  const localFiltersHtml = (cfg.localFilters||[]).map(lf=>{
+    const values = [...new Set(STATE.data[id].rows.map(r=>String(r[lf.key])).filter(Boolean))].sort();
+    const cur = st.local[lf.key]||"";
+    return '<select data-local="'+lf.key+'"><option value="">'+escapeHtml(lf.label)+': All</option>'
+      + values.map(v=>'<option value="'+escapeHtml(v)+'" '+(v===cur?"selected":"")+'>'+escapeHtml(v)+'</option>').join("")
+      + '</select>';
+  }).join("");
+  toolbar.innerHTML =
+    '<div class="toolbar-left">'
+    + '<input type="search" id="searchInput" placeholder="Search…" value="'+escapeHtml(st.search)+'">'
+    + localFiltersHtml
+    + '</div>'
+    + '<div class="toolbar-right"><span class="count-badge" id="countBadge"></span>'
+    + '<select id="pageSizeSelect"><option value="25">25 / page</option><option value="50">50 / page</option><option value="100">100 / page</option><option value="200">200 / page</option></select>'
+    + '</div>';
+  document.getElementById("pageSizeSelect").value = String(st.pageSize);
+  let searchTimer=null;
+  document.getElementById("searchInput").addEventListener("input", (e)=>{
+    clearTimeout(searchTimer);
+    const v=e.target.value;
+    searchTimer=setTimeout(()=>{ st.search=v; st.page=1; refreshSection(id); }, 280);
+  });
+  toolbar.querySelectorAll("select[data-local]").forEach(sel=>{
+    sel.addEventListener("change",()=>{ st.local[sel.dataset.local]=sel.value; st.page=1; refreshSection(id); });
+  });
+  document.getElementById("pageSizeSelect").addEventListener("change",(e)=>{ st.pageSize=+e.target.value; st.page=1; refreshSection(id); });
+
+  refreshSection(id);
+}
+
+function wireDbFilter(){
+  const btn=document.getElementById("dbFilterBtn"), panel=document.getElementById("dbFilterPanel");
+  btn.addEventListener("click",(e)=>{ e.stopPropagation(); panel.style.display = panel.style.display==="none"?"block":"none"; });
+  document.addEventListener("click",(e)=>{ if(panel && !panel.contains(e.target) && e.target!==btn) panel.style.display="none"; }, {once:true});
+  panel.querySelectorAll("input[data-db]").forEach(cb=>{
+    cb.addEventListener("change",()=>{
+      if(cb.checked) STATE.globalDb.add(cb.dataset.db); else STATE.globalDb.delete(cb.dataset.db);
+      refreshSection(STATE.current);
+      navigate(STATE.current);
+      document.getElementById("dbFilterPanel").style.display="block";
+    });
+  });
+  document.getElementById("dbAllBtn").addEventListener("click",()=>{ STATE.globalDb.clear(); navigate(STATE.current); });
+  document.getElementById("dbNoneBtn").addEventListener("click",()=>{ STATE.globalDb = new Set(STATE.dbUniverse); navigate(STATE.current); });
+}
+
+function refreshSection(id){
+  const cfg = SHEET_CONFIGS[id];
+  const st = STATE.sections[id];
+  const rows = getFilteredSortedRows(id);
+
+  // KPIs
+  document.getElementById("kpis").innerHTML = cfg.kpis(rows).map(k=>
+    '<div class="kpi"><div class="lbl">'+escapeHtml(k.label)+'</div><div class="val">'+escapeHtml(String(k.value))+'</div></div>'
+  ).join("");
+
+  // Charts
+  destroyCharts();
+  const chartsEl = document.getElementById("charts");
+  chartsEl.innerHTML = (cfg.charts||[]).map((c,i)=>'<div class="chart-card"><h3>'+escapeHtml(c.title)+'</h3><div class="canvas-wrap"><canvas id="secChart'+i+'"></canvas></div></div>').join("");
+  (cfg.charts||[]).forEach((c,i)=>{
+    const spec = c.build(rows);
+    ACTIVE_CHARTS.push(new Chart(document.getElementById("secChart"+i), spec));
+  });
+
+  // Count badge
+  const total = STATE.data[id].rows.length;
+  document.getElementById("countBadge").textContent = rows.length===total
+    ? rows.length.toLocaleString()+" rows"
+    : rows.length.toLocaleString()+" of "+total.toLocaleString()+" rows";
+
+  // Table
+  renderTable(id, rows);
+}
+
+function renderTable(id, rows){
+  const cfg = SHEET_CONFIGS[id];
+  const st = STATE.sections[id];
+  const wrap = document.getElementById("tableWrap");
+
+  const thead = '<thead><tr>' + cfg.columns.map(c=>{
+    const isSort = st.sort.key===c.key;
+    const arrow = isSort ? (st.sort.dir==="asc"?"▲":"▼") : "";
+    const numCls = (c.type==="int"||c.type==="num1"||c.type==="pct"||c.type==="pctsmall"||c.type==="size") ? " num" : "";
+    return '<th class="'+numCls.trim()+'" data-key="'+c.key+'">'+escapeHtml(c.label)+' <span class="arrow">'+arrow+'</span></th>';
+  }).join("") + '</tr></thead>';
+
+  const pageCount = Math.max(1, Math.ceil(rows.length/st.pageSize));
+  if(st.page>pageCount) st.page=pageCount;
+  const startIdx = (st.page-1)*st.pageSize;
+  const pageRows = rows.slice(startIdx, startIdx+st.pageSize);
+
+  let tbody;
+  if(pageRows.length===0){
+    tbody = '<tbody><tr class="empty-row"><td colspan="'+cfg.columns.length+'">No rows match the current filters.</td></tr></tbody>';
+  } else {
+    tbody = '<tbody>' + pageRows.map(r=>{
+      return '<tr>' + cfg.columns.map(c=>{
+        const numCls = (c.type==="int"||c.type==="num1"||c.type==="pct"||c.type==="pctsmall"||c.type==="size") ? " num" : "";
+        return '<td class="'+numCls.trim()+'">'+fmtCell(c, r[c.key])+'</td>';
+      }).join("") + '</tr>';
+    }).join("") + '</tbody>';
+  }
+
+  wrap.innerHTML = '<table class="dt">'+thead+tbody+'</table>';
+  wrap.querySelectorAll("thead th[data-key]").forEach(th=>{
+    th.addEventListener("click",()=>{
+      const key=th.dataset.key;
+      if(st.sort.key===key) st.sort.dir = st.sort.dir==="asc"?"desc":"asc";
+      else st.sort = {key, dir:"desc"};
+      st.page=1;
+      refreshSection(id);
+    });
+  });
+
+  // Pager
+  const pager = document.getElementById("pager");
+  pager.innerHTML =
+    '<span class="pageinfo">Page '+st.page+' of '+pageCount+'</span>'
+    + '<button id="pgFirst" '+(st.page<=1?"disabled":"")+'>« First</button>'
+    + '<button id="pgPrev" '+(st.page<=1?"disabled":"")+'>‹ Prev</button>'
+    + '<button id="pgNext" '+(st.page>=pageCount?"disabled":"")+'>Next ›</button>'
+    + '<button id="pgLast" '+(st.page>=pageCount?"disabled":"")+'>Last »</button>';
+  const go=(p)=>{ st.page=Math.min(Math.max(1,p),pageCount); renderTable(id, getFilteredSortedRows(id)); };
+  const bind=(elId,fn)=>{ const el=document.getElementById(elId); if(el) el.addEventListener("click",fn); };
+  bind("pgFirst",()=>go(1));
+  bind("pgPrev",()=>go(st.page-1));
+  bind("pgNext",()=>go(st.page+1));
+  bind("pgLast",()=>go(pageCount));
+}
+
+/* ---------------------------------------------------------------------- *
+ * Export: Excel & standalone HTML                                        *
+ * ---------------------------------------------------------------------- */
+function safeFileBase(id){
+  return (id==="overview"?"Overview":SHEET_CONFIGS[id].title).replace(/[^\w]+/g,"_");
+}
+function exportExcel(id){
+  const cfg = SHEET_CONFIGS[id];
+  const rows = getFilteredSortedRows(id);
+  const aoa = [cfg.columns.map(c=>c.label)];
+  rows.forEach(r=>{ aoa.push(cfg.columns.map(c=>{
+    const v=r[c.key];
+    return (v===""||v==null) ? "" : (isNaN(Number(v)) ? v : Number(v));
+  })); });
+  const ws = XLSX.utils.aoa_to_sheet(aoa);
+  const wb = XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(wb, ws, cfg.title.slice(0,31));
+  XLSX.writeFile(wb, "SAP_Replication_"+safeFileBase(id)+".xlsx");
+}
+function currentFilterSummary(id){
+  const cfg = SHEET_CONFIGS[id];
+  const st = STATE.sections[id];
+  const parts=[];
+  if(STATE.globalDb.size) parts.push("Databases: "+[...STATE.globalDb].join(", "));
+  if(st.search) parts.push('Search: "'+st.search+'"');
+  Object.keys(st.local||{}).forEach(k=>{ if(st.local[k]) parts.push(k+": "+st.local[k]); });
+  return parts.length ? parts.join(" · ") : "No filters applied (full dataset)";
+}
+function exportHtml(id){
+  const cfg = SHEET_CONFIGS[id];
+  const rows = getFilteredSortedRows(id);
+  const genAt = new Date().toLocaleString();
+
+  const chartImgs = ACTIVE_CHARTS.map((c,i)=>{
+    try{ return {title:(cfg.charts&&cfg.charts[i]?cfg.charts[i].title:"Chart"), src:c.canvas.toDataURL("image/png")}; }
+    catch(e){ return null; }
+  }).filter(Boolean);
+
+  const tableRows = rows.map(r=>'<tr>'+cfg.columns.map(c=>{
+    const numCls=(c.type==="int"||c.type==="num1"||c.type==="pct"||c.type==="pctsmall"||c.type==="size")?' class="num"':"";
+    let val = fmtCell(c, r[c.key]);
+    if(c.type==="badge"){ const key=String(r[c.key]||"").trim(); val = key?escapeHtml(key):"—"; }
+    return '<td'+numCls+'>'+val+'</td>';
+  }).join("")+'</tr>').join("");
+
+  const html = '<!DOCTYPE html><html><head><meta charset="UTF-8"><title>'+escapeHtml(cfg.title)+' – Exported Report</title>'
+    + '<style>body{font-family:Segoe UI,Arial,sans-serif;background:#f6f7fb;color:#111827;margin:0;padding:28px}'
+    + 'h1{font-size:19px;margin:0 0 4px} .meta{color:#6b7280;font-size:12.5px;margin-bottom:18px}'
+    + '.charts{display:flex;gap:16px;flex-wrap:wrap;margin-bottom:22px} .chart{background:#fff;border:1px solid #e5e7eb;border-radius:10px;padding:12px;max-width:480px}'
+    + '.chart img{max-width:100%} .chart h3{font-size:12.5px;margin:0 0 8px}'
+    + 'table{border-collapse:collapse;width:100%;font-size:12px;background:#fff} th,td{padding:7px 10px;border-bottom:1px solid #e5e7eb;text-align:left;white-space:nowrap}'
+    + 'th{background:#f1f3f9;position:sticky;top:0} td.num,th.num{text-align:right} tr:hover{background:#f8f9fd}'
+    + '.wrap{overflow:auto;border:1px solid #e5e7eb;border-radius:10px;max-height:80vh}</style></head><body>'
+    + '<h1>SAP Replication Analytics — '+escapeHtml(cfg.title)+'</h1>'
+    + '<div class="meta">Source: '+escapeHtml(STATE.fileName)+' · Generated '+genAt+' · '+rows.length.toLocaleString()+' rows · '+escapeHtml(currentFilterSummary(id))+'</div>'
+    + (chartImgs.length? '<div class="charts">'+chartImgs.map(ci=>'<div class="chart"><h3>'+escapeHtml(ci.title)+'</h3><img src="'+ci.src+'"></div>').join("")+'</div>' : "")
+    + '<div class="wrap"><table><thead><tr>'+cfg.columns.map(c=>'<th'+((c.type==="int"||c.type==="num1"||c.type==="pct"||c.type==="pctsmall"||c.type==="size")?' class="num"':"")+'>'+escapeHtml(c.label)+'</th>').join("")+'</tr></thead><tbody>'
+    + (tableRows || '<tr><td colspan="'+cfg.columns.length+'" style="text-align:center;color:#6b7280;padding:20px">No rows</td></tr>')
+    + '</tbody></table></div></body></html>';
+
+  const blob = new Blob([html], {type:"text/html"});
+  const a = document.createElement("a");
+  a.href = URL.createObjectURL(blob);
+  a.download = "SAP_Replication_"+safeFileBase(id)+".html";
+  document.body.appendChild(a); a.click(); a.remove();
+  setTimeout(()=>URL.revokeObjectURL(a.href), 4000);
+}
+
+/* ---------------------------------------------------------------------- *
+ * File loading UI                                                        *
+ * ---------------------------------------------------------------------- */
+function handleFile(file){
+  if(!file) return;
+  const reader = new FileReader();
+  reader.onload = (e)=>{
+    try{
+      loadWorkbook(e.target.result, file.name);
+      onWorkbookLoaded();
+    }catch(err){
+      alert("Could not read this workbook: "+err.message);
+      console.error(err);
+    }
+  };
+  reader.readAsArrayBuffer(file);
+}
+function onWorkbookLoaded(){
+  document.getElementById("welcome").hidden = true;
+  document.getElementById("workspace").hidden = false;
+  document.getElementById("loadBtn").textContent = "🔄 Reload / Change File";
+  renderSidebarFoot();
+  renderNav();
+  navigate("overview");
+}
+function renderSidebarFoot(){
+  const rowsInfo = Object.keys(SHEET_CONFIGS).map(id=>{
+    return '<div class="row"><span>'+SHEET_CONFIGS[id].title+'</span><b>'+STATE.data[id].rows.length.toLocaleString()+'</b></div>';
+  }).join("");
+  document.getElementById("sidebarFoot").innerHTML =
+    '<div class="row"><span>File</span></div><div style="word-break:break-all;margin-bottom:6px"><b>'+escapeHtml(STATE.fileName)+'</b></div>'
+    + '<div class="row"><span>Loaded</span><b>'+STATE.loadedAt.toLocaleTimeString()+'</b></div>'
+    + '<div class="row"><span>Databases</span><b>'+STATE.dbUniverse.length+'</b></div>'
+    + '<hr style="border:none;border-top:1px solid var(--line);margin:8px 0">'
+    + rowsInfo;
+}
+
+/* ---------------------------------------------------------------------- *
+ * Wiring                                                                  *
+ * ---------------------------------------------------------------------- */
+document.getElementById("loadBtn").addEventListener("click", ()=>document.getElementById("fileInput").click());
+document.getElementById("welcomeLoadBtn").addEventListener("click", ()=>document.getElementById("fileInput").click());
+document.getElementById("fileInput").addEventListener("change", (e)=>{ if(e.target.files[0]) handleFile(e.target.files[0]); e.target.value=""; });
+
+const dropZone = document.getElementById("dropZone");
+["dragenter","dragover"].forEach(ev=>dropZone.addEventListener(ev,(e)=>{ e.preventDefault(); dropZone.classList.add("drag"); }));
+["dragleave","drop"].forEach(ev=>dropZone.addEventListener(ev,(e)=>{ e.preventDefault(); dropZone.classList.remove("drag"); }));
+dropZone.addEventListener("drop",(e)=>{ const f=e.dataTransfer.files[0]; if(f) handleFile(f); });
+
+document.getElementById("themeBtn").addEventListener("click", ()=>{
+  const html=document.documentElement;
+  const isDark = html.getAttribute("data-theme")==="dark";
+  html.setAttribute("data-theme", isDark?"light":"dark");
+  document.getElementById("themeBtn").textContent = isDark? "🌙 Dark":"☀️ Light";
+  try{ localStorage.setItem("sapRepTheme", isDark?"light":"dark"); }catch(e){}
+  if(STATE.loaded) navigate(STATE.current);
+});
+try{
+  const savedTheme = localStorage.getItem("sapRepTheme");
+  if(savedTheme==="dark"){ document.documentElement.setAttribute("data-theme","dark"); document.getElementById("themeBtn").textContent="☀️ Light"; }
+}catch(e){}
+
+function showPicker(message){
+  document.getElementById("welcomeIcon").textContent = "📊";
+  document.getElementById("welcomeTitle").textContent = "Load the SAP Replication Analysis workbook";
+  document.getElementById("welcomeMsg").textContent = message;
+  document.getElementById("spinner").hidden = true;
+  document.getElementById("welcomeLoadBtn").hidden = false;
+  document.getElementById("welcomeHint").hidden = false;
+}
+function base64ToArrayBuffer(b64){
+  const bin = atob(b64);
+  const bytes = new Uint8Array(bin.length);
+  for(let i=0;i<bin.length;i++) bytes[i] = bin.charCodeAt(i);
+  return bytes.buffer;
+}
+function bootFromEmbedded(){
+  const emb = window.EMBEDDED_WORKBOOK;
+  if(!emb || !emb.b64){
+    showPicker("This report runs entirely inside this browser tab. The Excel file is read on your machine and is never uploaded anywhere.");
+    return;
+  }
+  /* Yield to the browser first so the loading state actually paints before the
+     parse blocks the main thread. */
+  setTimeout(()=>{
+    try{
+      loadWorkbook(base64ToArrayBuffer(emb.b64), emb.name || "Embedded workbook");
+      onWorkbookLoaded();
+    }catch(err){
+      console.error(err);
+      showPicker("The embedded workbook could not be read ("+err.message+"). Choose the .xlsx file manually instead.");
+    }
+  }, 60);
+}
+
+renderNav();
+bootFromEmbedded();
+</script>
+</body>
+</html>

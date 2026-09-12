@@ -1,0 +1,11 @@
+# Temporary test harnesses generated when verifying the report
+Report/_*.html
+
+# Excel lock files
+~$*.xlsx
+~$*.xls
+
+# OS clutter
+Thumbs.db
+desktop.ini
+.DS_Store
