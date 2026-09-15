@@ -1161,7 +1161,7 @@ function renderOverviewBlocks(root){
     + '</div>';
   html+='<div><div class="groupbar" style="background:'+TILE_GRADS.storage+'">Distribution</div><div class="charts" style="margin-top:7px">'
     + [["ovStorage","Replicated Storage by Database (GB)"],["ovStatus","Table Usage Status"],
-       ["ovLevel","Usage Level (BI-used tables)"],["ovSp","Stored Procedure Category"]]
+       ["ovLevel","Usage Level (BI-used tables)"]]
       .map(([id,t])=>'<div class="chart-card"><h3>'+t+'</h3><div class="canvas-wrap"><canvas id="'+id+'"></canvas></div></div>').join("")
     + '</div></div></div>';
   root.innerHTML=html;
@@ -1170,7 +1170,6 @@ function renderOverviewBlocks(root){
   makeChart("ovStorage",barSpec(stor.map(s=>s.db),stor.map(s=>s.gb),"Storage (GB)"),OVERVIEW_CHARTS);
   makeChart("ovStatus",donutSpec((ov.status||[]).map(s=>s.label),(ov.status||[]).map(s=>s.value)),OVERVIEW_CHARTS);
   makeChart("ovLevel",donutSpec((ov.usageLevel||[]).map(s=>s.label),(ov.usageLevel||[]).map(s=>s.value)),OVERVIEW_CHARTS);
-  makeChart("ovSp",donutSpec((ov.spCategory||[]).map(s=>s.label),(ov.spCategory||[]).map(s=>s.value)),OVERVIEW_CHARTS);
 }
 
 /* ------------------------------ section shell ------------------------------ */
