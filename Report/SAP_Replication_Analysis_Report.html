@@ -25,6 +25,7 @@ html[data-theme="dark"]{
   --tot-a:#2a2b3a; --tot-b:#242e2e; --tot-ink:#c3c5f5;
 }
 *{box-sizing:border-box}
+[hidden]{display:none!important}
 body{margin:0;background:var(--bg);color:var(--ink);font:13px/1.4 -apple-system,Segoe UI,Roboto,Arial,sans-serif}
 h1,h2,h3{margin:0;font-weight:700}
 button{font-family:inherit}
@@ -126,11 +127,14 @@ table.dt thead tr.filters th{top:36px;z-index:19;height:33px;padding:0 5px;curso
 table.dt tbody td{padding:7px 10px;border-bottom:1px solid var(--line);white-space:nowrap;background:var(--panel)}
 table.dt tbody tr:hover td{background:var(--panel2)}
 table.dt td.num,table.dt th.num{text-align:right;font-variant-numeric:tabular-nums}
-th.frz,td.frz{position:sticky;z-index:15;overflow:hidden;text-overflow:ellipsis}
-thead th.frz{z-index:30}
-thead tr.filters th.frz{z-index:29}
-tfoot td.frz{z-index:26}
-td.frz{box-shadow:1px 0 0 var(--line)}
+/* Frozen columns. Selectors carry table.dt so they outrank the generic sticky
+   header/footer rules above; otherwise frozen and scrolling cells share a z-index. */
+table.dt th.frz,table.dt td.frz{position:sticky}
+table.dt tbody td.frz{z-index:12}
+table.dt thead tr:first-child th.frz{z-index:32}
+table.dt thead tr.filters th.frz{z-index:31}
+table.dt tfoot td.frz{z-index:28}
+table.dt .frz-last{box-shadow:inset -1px 0 0 var(--line),4px 0 6px -3px rgba(0,0,0,.18)}
 table.dt tfoot td{position:sticky;bottom:0;z-index:22;background:linear-gradient(135deg,var(--tot-a),var(--tot-b));border-top:2px solid var(--accent);padding:9px 10px;font-weight:800;white-space:nowrap;color:var(--tot-ink)}
 table.dt tfoot td.num{font-size:12.6px}
 .empty-row td{text-align:center;color:var(--ink2);padding:26px}
@@ -620,6 +624,15 @@ function fmtSize(mb){
   if(a>=1/1024) return f(n*1024,2)+" KB";
   return f(n*1048576,0)+" bytes";
 }
+/* Large counts in words: Lakhs from 1,00,000, then Millions and Billions. */
+function fmtScale(v){
+  const n=toNum(v); if(isNaN(n)) return "—";
+  const a=Math.abs(n), f=x=>x.toLocaleString("en-US",{minimumFractionDigits:2,maximumFractionDigits:2});
+  if(a>=1e9) return f(n/1e9)+" Billion";
+  if(a>=1e6) return f(n/1e6)+" Million";
+  if(a>=1e5) return f(n/1e5)+" Lakhs";
+  return fmtInt(n);
+}
 function isNumericType(t){ return t==="int"||t==="num1"||t==="size"; }
 function isRightAligned(t){ return isNumericType(t)||t==="pct"||t==="pctsmall"; }
 function fmtCell(col,val){
@@ -1010,8 +1023,9 @@ function navigate(navId){
   document.getElementById("sectionTitle").textContent=item?item.label:cfg.title;
   document.getElementById("sectionSub").textContent=cfg.sub;
   const ov=document.getElementById("overviewBlocks"), heading=document.getElementById("tableHeading");
-  if(navId==="overview"){ renderOverviewBlocks(ov); heading.hidden=false; heading.textContent="Databases"; }
-  else { ov.innerHTML=""; heading.hidden=true; }
+  if(navId==="overview"){ renderOverviewBlocks(ov); heading.textContent="Databases"; }
+  else { ov.innerHTML=""; heading.textContent=item?item.label:cfg.title; }
+  heading.hidden=false;
   renderSectionShell(tblId);
 }
 
@@ -1035,13 +1049,35 @@ function buildOverviewTiles(){
   const dgMB=sumBy(dg,"Est. Total Size Per Day (MB)");
   const spSap=sp.filter(r=>String(r.UsesSAP).toUpperCase()==="YES").length;
 
+  /* Rows per usage bucket come from the per-table catalogue so both sides are on the
+     same basis; the summary sheet only offers a rounded "~951 Million" string. */
+  const tb=rowsOf("tables");
+  const biRows=sumBy(tb.filter(r=>String(r["BI Used?"]).trim().toLowerCase()==="yes"),"Row Count");
+  const unRows=sumBy(un,"TableRowCount");
+  const avgRows=totTables?totRows/totTables:0;
+
   return [
+    {title:"Storage Details", icon:"💽", grad:TILE_GRADS.storage, items:[
+      {label:"Replicated Storage", value:fmtSize(repMB), hero:true},
+      {label:"Data Size", value:fmtSize(dataMB)},
+      {label:"Index Size", value:fmtSize(idxMB)},
+      {label:"BI Used Storage", value:kv("BI Used Storage")||"—"},
+      {label:"Held by Unused Tables", value:fmtSize(unusedMB)+share(unusedMB,repMB)},
+      {label:"Top-91 Tables' Share", value:kv("Top-91")||"—"}
+    ]},
     {title:"Database Details", icon:"🗄️", grad:TILE_GRADS.db, items:[
       {label:"Databases in Replication", value:fmtInt(db.length), hero:true},
       {label:"Views", value:fmtInt(sumBy(db,"View Count"))},
       {label:"Procedures", value:fmtInt(sumBy(db,"Proc Count"))},
       {label:"Indexes", value:fmtInt(sumBy(db,"Index Count"))},
       {label:"SP Dependencies on SAP DBs", value:fmtInt(sumBy(db,"SPs Depending on This DB"))}
+    ]},
+    {title:"Stored Procedure Details", icon:"⚙️", grad:TILE_GRADS.sps, items:[
+      {label:"Stored Procedures", value:fmtInt(sp.length), hero:true},
+      {label:"Uses SAP Data", value:fmtInt(spSap)+share(spSap,sp.length)},
+      {label:"No SAP Dependency", value:fmtInt(sp.length-spSap)+share(sp.length-spSap,sp.length)},
+      {label:"Very High Complexity", value:fmtInt(sp.filter(r=>String(r.DependencyComplexity)==="Very High").length)},
+      {label:"Uses Dynamic SQL", value:fmtInt(sp.filter(r=>String(r.HasDynamicSQL).toUpperCase()==="YES").length)}
     ]},
     {title:"Table Details", icon:"📋", grad:TILE_GRADS.tables, items:[
       {label:"Total Tables", value:fmtInt(totTables), hero:true},
@@ -1057,26 +1093,11 @@ function buildOverviewTiles(){
       {label:"Unused Columns", value:fmtInt(totCols-biCols)+share(totCols-biCols,totCols)},
       {label:"Avg Columns per Table", value:fmtNum1(totTables?totCols/totTables:0)}
     ]},
-    {title:"Storage Details", icon:"💽", grad:TILE_GRADS.storage, items:[
-      {label:"Replicated Storage", value:fmtSize(repMB), hero:true},
-      {label:"Data Size", value:fmtSize(dataMB)},
-      {label:"Index Size", value:fmtSize(idxMB)},
-      {label:"BI Used Storage", value:kv("BI Used Storage")||"—"},
-      {label:"Held by Unused Tables", value:fmtSize(unusedMB)+share(unusedMB,repMB)},
-      {label:"Top-91 Tables' Share", value:kv("Top-91")||"—"}
-    ]},
     {title:"Row Volume", icon:"🔢", grad:TILE_GRADS.rows, items:[
-      {label:"Total Rows", value:fmtInt(totRows), hero:true},
-      {label:"Rows in BI-Used Tables", value:kv("Total used Rows")||"—"},
-      {label:"Rows in Unused Tables", value:fmtInt(sumBy(un,"TableRowCount"))},
-      {label:"Avg Rows per Table", value:fmtInt(totTables?totRows/totTables:0)}
-    ]},
-    {title:"Stored Procedure Details", icon:"⚙️", grad:TILE_GRADS.sps, items:[
-      {label:"Stored Procedures", value:fmtInt(sp.length), hero:true},
-      {label:"Uses SAP Data", value:fmtInt(spSap)+share(spSap,sp.length)},
-      {label:"No SAP Dependency", value:fmtInt(sp.length-spSap)+share(sp.length-spSap,sp.length)},
-      {label:"Very High Complexity", value:fmtInt(sp.filter(r=>String(r.DependencyComplexity)==="Very High").length)},
-      {label:"Uses Dynamic SQL", value:fmtInt(sp.filter(r=>String(r.HasDynamicSQL).toUpperCase()==="YES").length)}
+      {label:"Total Rows", value:fmtScale(totRows), title:fmtInt(totRows)+" rows", hero:true},
+      {label:"Rows in BI-Used Tables", value:fmtScale(biRows)+share(biRows,totRows), title:fmtInt(biRows)+" rows"},
+      {label:"Rows in Unused Tables", value:fmtScale(unRows)+share(unRows,totRows), title:fmtInt(unRows)+" rows"},
+      {label:"Avg Rows per Table", value:fmtScale(avgRows), title:fmtInt(avgRows)+" rows"}
     ]},
     {title:"Daily Growth (Estimated)", icon:"🧮", grad:TILE_GRADS.growth, items:[
       {label:"Data Written per Day", value:fmtSize(dgMB), hero:true},
@@ -1096,7 +1117,7 @@ function renderOverviewBlocks(root){
         '<div class="tile" style="--tile-grad:'+t.grad+'">'
         + '<div class="tile-head" style="background:'+t.grad+'"><span class="ticon">'+t.icon+'</span>'+escapeHtml(t.title)+'</div>'
         + '<div class="tile-body">'
-        + t.items.map(i=>'<div class="trow'+(i.hero?" hero":"")+'"><span class="tl">'+escapeHtml(i.label)+'</span><span class="tv">'+i.value+'</span></div>').join("")
+        + t.items.map(i=>'<div class="trow'+(i.hero?" hero":"")+'"'+(i.title?' title="'+escapeHtml(i.title)+'"':'')+'><span class="tl">'+escapeHtml(i.label)+'</span><span class="tv">'+i.value+'</span></div>').join("")
         + '</div></div>').join("")
     + '</div>';
   html+='<div><div class="groupbar" style="background:'+TILE_GRADS.storage+'">Distribution</div><div class="charts" style="margin-top:7px">'
@@ -1170,14 +1191,24 @@ function wireDbFilter(id){
   document.getElementById("dbNone").addEventListener("click",()=>{ STATE.globalDb=new Set(STATE.dbUniverse); renderSectionShell(id); });
 }
 
-/* Frozen leading columns keep the identifying pair visible while scrolling sideways. */
-const FRZ_W=[178,150];
-function freezeStyle(cfg,idx){
-  const n=cfg.freeze||0;
-  if(idx>=n) return "";
-  const left=FRZ_W.slice(0,idx).reduce((a,b)=>a+b,0);
-  const w=FRZ_W[idx]||150;
-  return 'left:'+left+'px;width:'+w+'px;min-width:'+w+'px;max-width:'+w+'px;';
+/* Frozen leading columns. Table layout sizes columns to their content, so fixed pixel
+   offsets drift and neighbouring frozen cells overlap; offsets are measured from the
+   rendered header instead, after every render. */
+function freezeStyle(cfg,idx){ return idx<(cfg.freeze||0) ? "left:0px;" : ""; }
+function applyFreezeOffsets(id){
+  const n=(SHEET_CONFIGS[id]&&SHEET_CONFIGS[id].freeze)||0;
+  const table=document.querySelector("#tableWrap table.dt");
+  if(!table||!n) return;
+  const heads=table.querySelectorAll("thead tr:first-child th");
+  let left=0;
+  for(let i=0;i<n&&i<heads.length;i++){
+    table.querySelectorAll("tr > :nth-child("+(i+1)+")").forEach(cell=>{
+      if(!cell.classList.contains("frz")) return;
+      cell.style.left=left+"px";
+      cell.classList.toggle("frz-last",i===n-1);
+    });
+    left+=heads[i].getBoundingClientRect().width;
+  }
 }
 function buildTableShell(id){
   const cfg=SHEET_CONFIGS[id], st=STATE.sections[id];
@@ -1331,6 +1362,7 @@ function renderRows(id,rows){
     : '<tr class="empty-row"><td colspan="'+cfg.columns.length+'">No rows match the current filters.</td></tr>';
 
   document.getElementById("dtFoot").innerHTML=totalsRowHtml(cfg,rows);
+  applyFreezeOffsets(id);
 
   document.getElementById("pager").innerHTML=
      '<span class="pageinfo">Showing '+fmtInt(rows.length?start+1:0)+'–'+fmtInt(Math.min(start+st.pageSize,rows.length))+' of '+fmtInt(rows.length)+' · page '+st.page+' of '+pageCount+'</span>'
@@ -1441,6 +1473,7 @@ async function refreshAll(){
 }
 
 document.getElementById("refreshBtn").addEventListener("click",refreshAll);
+window.addEventListener("resize",()=>{ if(STATE.loaded) applyFreezeOffsets(tableSectionOf(STATE.current)); });
 document.getElementById("exportXlsxBtn").addEventListener("click",exportExcel);
 document.getElementById("exportHtmlBtn").addEventListener("click",exportHtml);
 document.getElementById("themeBtn").addEventListener("click",()=>{
