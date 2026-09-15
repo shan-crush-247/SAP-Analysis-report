@@ -219,7 +219,11 @@ const DAILY_GROWTH_NOTE =
 +"from the busiest-month sampling on the Insertion Trends sheet. 'Cells Inserted Per Day' is the table's "
 +"column count × its average inserted rows per day. Coverage is limited to the tables that were sampled "
 +"for insertion activity and that also carry catalogue size figures — it is a representative lower bound "
-+"for daily growth, not a whole-server total. Tables with no measurable insertion data contribute nothing.";
++"for daily growth, not a whole-server total. Tables with no measurable insertion data contribute nothing. "
++"Table size columns: 'Avg Cell Size' = Data Size (MB) ÷ (Row Count × column count); 'Est. Table Growth Per Day' = "
++"column count × avg inserted rows per day × avg cell size. Only inserts are counted as growth, because updates "
++"rewrite existing rows. 'Est. Table Size in 30 Days / 1 Year' = the table's current Total Size (MB) plus that "
++"growth; index growth is not modelled, so projected sizes are a lower bound.";
 
 const SHEET_CONFIGS = {
   databases:{
@@ -560,12 +564,17 @@ const SHEET_CONFIGS = {
       {key:"Row Count", type:"int"},
       {key:"Avg Inserts Per Day (approx)", type:"num1"},
       {key:"Cells Inserted Per Day", type:"int"},
-      {key:"Avg Row Size", type:"size"},
+      {key:"Avg Row Size", type:"size", noTotal:true},
       {key:"Est. Insert Size Per Day (MB)", type:"size"},
       {key:"Avg Updates Per Day (approx)", type:"num1"},
       {key:"Est. Update Size Per Day (MB)", type:"size"},
       {key:"Est. Total Size Per Day (MB)", type:"size"},
-      {key:"Est. Growth Per Day % of Table", type:"pctsmall"}
+      {key:"Est. Growth Per Day % of Table", type:"pctsmall"},
+      {key:"Avg Cell Size", type:"size", noTotal:true},
+      {key:"Est. Table Growth Per Day (MB)", type:"size"},
+      {key:"Current Table Size (MB)", type:"size"},
+      {key:"Est. Table Size in 30 Days (MB)", type:"size"},
+      {key:"Est. Table Size in 1 Year (MB)", type:"size"}
     ],
     kpis:(rows)=>[
       {label:"Tables Covered", value:fmtInt(rows.length)},
@@ -574,7 +583,9 @@ const SHEET_CONFIGS = {
       {label:"Update Size / Day", value:fmtSize(sumBy(rows,"Est. Update Size Per Day (MB)"))},
       {label:"Total Written / Day", value:fmtSize(sumBy(rows,"Est. Total Size Per Day (MB)"))},
       {label:"Projected / 30 Days", value:fmtSize(sumBy(rows,"Est. Total Size Per Day (MB)")*30)},
-      {label:"Projected / Year", value:fmtSize(sumBy(rows,"Est. Total Size Per Day (MB)")*365)}
+      {label:"Projected / Year", value:fmtSize(sumBy(rows,"Est. Total Size Per Day (MB)")*365)},
+      {label:"Table Growth / Day", value:fmtSize(sumBy(rows,"Est. Table Growth Per Day (MB)"))},
+      {label:"Table Size in 1 Year", value:fmtSize(sumBy(rows,"Est. Table Size in 1 Year (MB)"))}
     ],
     charts:[
       {title:"Est. Total Size Per Day (MB) — top 15 tables", build:(rows)=>topNBarChart(rows,"Table Name","Est. Total Size Per Day (MB)",15,"MB",1)},
@@ -593,7 +604,8 @@ const TILE_GRADS = {
   storage: "linear-gradient(135deg,#0f766e,#3fa08a)",
   rows:    "linear-gradient(135deg,#3f7d3a,#7aa332)",
   sps:     "linear-gradient(135deg,#b45309,#e08a2e)",
-  growth:  "linear-gradient(135deg,#a1265c,#d4517e)"
+  growth:  "linear-gradient(135deg,#a1265c,#d4517e)",
+  tstore:  "linear-gradient(135deg,#34478a,#5b7fcf)"
 };
 
 const STATE = {
@@ -622,7 +634,7 @@ function fmtSize(mb){
   if(a>=1024) return f(n/1024,2)+" GB";
   if(a>=1) return f(n,2)+" MB";
   if(a>=1/1024) return f(n*1024,2)+" KB";
-  return f(n*1048576,0)+" bytes";
+  return f(n*1048576,2)+" bytes";
 }
 /* Large counts in words: Lakhs from 1,00,000, then Millions and Billions. */
 function fmtScale(v){
@@ -770,6 +782,12 @@ function buildDailyGrowth(){
     const insMB=(!isNaN(ins)&&!isNaN(mbPerRow))?ins*mbPerRow:NaN;
     const updMB=(!isNaN(upd)&&!isNaN(mbPerRow))?upd*mbPerRow:NaN;
     const totMB=(isNaN(insMB)&&isNaN(updMB))?NaN:((isNaN(insMB)?0:insMB)+(isNaN(updMB)?0:updMB));
+    /* Column-based sizing: cells inserted per day × this table's average bytes per cell.
+       Only inserts grow a table (updates rewrite rows in place), so projections use inserts. */
+    const curMB=t?toNum(t["Total Size (MB)"]):NaN;
+    const cellsDay=(!isNaN(cols)&&!isNaN(ins))?cols*ins:NaN;
+    const cellMB=(!isNaN(dataMB)&&!isNaN(rowCount)&&!isNaN(cols)&&rowCount>0&&cols>0)?dataMB/(rowCount*cols):NaN;
+    const growMB=(!isNaN(cellsDay)&&!isNaN(cellMB))?cellsDay*cellMB:NaN;
     out.push({
       "Database Name":db,
       "Table Name":rawName,
@@ -782,7 +800,12 @@ function buildDailyGrowth(){
       "Avg Updates Per Day (approx)":isNaN(upd)?"":upd,
       "Est. Update Size Per Day (MB)":isNaN(updMB)?"":updMB,
       "Est. Total Size Per Day (MB)":isNaN(totMB)?"":totMB,
-      "Est. Growth Per Day % of Table":(!isNaN(ins)&&!isNaN(rowCount)&&rowCount>0)?(ins/rowCount*100):""
+      "Est. Growth Per Day % of Table":(!isNaN(ins)&&!isNaN(rowCount)&&rowCount>0)?(ins/rowCount*100):"",
+      "Avg Cell Size":isNaN(cellMB)?"":cellMB,
+      "Est. Table Growth Per Day (MB)":isNaN(growMB)?"":growMB,
+      "Current Table Size (MB)":isNaN(curMB)?"":curMB,
+      "Est. Table Size in 30 Days (MB)":(isNaN(curMB)||isNaN(growMB))?"":curMB+growMB*30,
+      "Est. Table Size in 1 Year (MB)":(isNaN(curMB)||isNaN(growMB))?"":curMB+growMB*365
     });
   });
   return out.filter(r=>r["Est. Total Size Per Day (MB)"]!==""||r["Cells Inserted Per Day"]!=="");
@@ -1056,6 +1079,12 @@ function buildOverviewTiles(){
   const unRows=sumBy(un,"TableRowCount");
   const avgRows=totTables?totRows/totTables:0;
 
+  const growDay=sumBy(dg,"Est. Table Growth Per Day (MB)");
+  const cellsDay=sumBy(dg,"Cells Inserted Per Day");
+  const curCovered=sumBy(dg,"Current Table Size (MB)");
+  const fastest=dg.filter(r=>r["Est. Table Growth Per Day (MB)"]!=="")
+    .sort((a,b)=>b["Est. Table Growth Per Day (MB)"]-a["Est. Table Growth Per Day (MB)"])[0];
+
   return [
     {title:"Storage Details", icon:"💽", grad:TILE_GRADS.storage, items:[
       {label:"Replicated Storage", value:fmtSize(repMB), hero:true},
@@ -1105,6 +1134,16 @@ function buildOverviewTiles(){
       {label:"Projected / 30 Days", value:fmtSize(dgMB*30)},
       {label:"Projected / Year", value:fmtSize(dgMB*365)},
       {label:"Tables Covered", value:fmtInt(dg.length)}
+    ]},
+    {title:"Table Storage (Estimated)", icon:"📦", grad:TILE_GRADS.tstore, items:[
+      {label:"Table Growth per Day", value:fmtSize(growDay), hero:true, title:"Σ column count × rows inserted per day × avg cell size"},
+      {label:"Cells Inserted per Day", value:fmtInt(cellsDay), title:"Column count × avg rows inserted per day"},
+      {label:"Avg Size per Cell", value:fmtSize(cellsDay?growDay/cellsDay:NaN), title:"Each table's data size ÷ (rows × columns), weighted by cells inserted"},
+      {label:"Current Size (these tables)", value:fmtSize(curCovered)},
+      {label:"Est. Size in 30 Days", value:fmtSize(curCovered+growDay*30)+share(growDay*30,curCovered)},
+      {label:"Est. Size in 1 Year", value:fmtSize(curCovered+growDay*365)+share(growDay*365,curCovered)},
+      {label:"Fastest-Growing Table", value:fastest?escapeHtml(fastest["Table Name"])+'<span class="sub">('+fmtSize(fastest["Est. Table Growth Per Day (MB)"])+'/day)</span>':"—",
+        title:fastest?fastest["Database Name"]+" · "+fastest["Table Name"]:""}
     ]}
   ];
 }
@@ -1380,7 +1419,7 @@ function totalsRowHtml(cfg,rows){
   return '<tr>'+cfg.columns.map((c,i)=>{
     const frz=i<(cfg.freeze||0)?" frz":"";
     const style=freezeStyle(cfg,i);
-    if(isNumericType(c.type)) return '<td class="num'+frz+'" style="'+style+'">'+fmtCell(c,sumBy(rows,c.key))+'</td>';
+    if(isNumericType(c.type)&&!c.noTotal) return '<td class="num'+frz+'" style="'+style+'">'+fmtCell(c,sumBy(rows,c.key))+'</td>';
     if(c.type==="pct"||c.type==="pctsmall") return '<td class="num'+frz+'" style="'+style+'">'+(c.type==="pct"?fmtPct(avgBy(rows,c.key)):fmtPctSmall(avgBy(rows,c.key)))+' avg</td>';
     const cell=!labelled?("TOTAL · "+fmtInt(rows.length)+" rows"):"";
     labelled=true;
@@ -1406,7 +1445,7 @@ function exportExcel(){
     const v=r[c.key];
     return (v===""||v==null)?"":(isNaN(Number(v))?v:Number(v));
   })));
-  aoa.push(cfg.columns.map(c=>isNumericType(c.type)?sumBy(rows,c.key):(c.type==="pct"||c.type==="pctsmall"?avgBy(rows,c.key):"")));
+  aoa.push(cfg.columns.map(c=>(isNumericType(c.type)&&!c.noTotal)?sumBy(rows,c.key):(c.type==="pct"||c.type==="pctsmall"?avgBy(rows,c.key):"")));
   const ws=XLSX.utils.aoa_to_sheet(aoa);
   const wb=XLSX.utils.book_new();
   XLSX.utils.book_append_sheet(wb,ws,cfg.title.slice(0,31));
@@ -1422,7 +1461,7 @@ function exportHtml(){
     return '<td'+nc(c)+'>'+v+'</td>';
   }).join("")+'</tr>').join("");
   const totals='<tr class="tot">'+cfg.columns.map((c,i)=>{
-    if(isNumericType(c.type)) return '<td class="num">'+fmtCell(c,sumBy(rows,c.key))+'</td>';
+    if(isNumericType(c.type)&&!c.noTotal) return '<td class="num">'+fmtCell(c,sumBy(rows,c.key))+'</td>';
     if(c.type==="pct"||c.type==="pctsmall") return '<td class="num">'+(c.type==="pct"?fmtPct(avgBy(rows,c.key)):fmtPctSmall(avgBy(rows,c.key)))+' avg</td>';
     return '<td>'+(i===0?"TOTAL · "+fmtInt(rows.length)+" rows":"")+'</td>';
   }).join("")+'</tr>';
