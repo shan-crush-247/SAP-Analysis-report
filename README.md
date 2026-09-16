@@ -25,7 +25,7 @@ any machine and it behaves identically.
 
 ## What's in it
 
-Eleven sections, reachable from the sidebar:
+Twelve sections, reachable from the sidebar:
 
 | Section | What it covers |
 |---|---|
@@ -38,7 +38,8 @@ Eleven sections, reachable from the sidebar:
 | Unused Tables | Tables replicated but never referenced by BI |
 | Top Insights | The 50 largest tables, storage against BI usage |
 | Insertion Trends | Approximate daily insert/update volume, per table and per database |
-| Daily Growth (Estimated) | Estimated data written per day per table — cells written (column count × rows/day), storage cost per day, and each table's projected size in 30 days and 1 year |
+| Daily Growth of BI Reports | Estimated data written per day per sampled BI table — cells written (column count × rows/day), storage cost per day, and each table's projected size in 30 days and 1 year |
+| Daily Growth of Replication Server | Database-wise estimate of server growth per day, 30 days and year — each database's sampled growth rate scaled to its full size, alongside the measured lower bound |
 
 Every section supports Excel-style per-column dropdown filters, click-to-sort on any column,
 a section-wide search, a database filter, frozen leading columns, and a TOTAL row summing

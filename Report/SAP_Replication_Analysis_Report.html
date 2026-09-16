@@ -73,6 +73,20 @@ button{font-family:inherit}
 .trow.hero .tl{font-size:11.2px;text-transform:uppercase;letter-spacing:.4px}
 .trow.hero .tv{font-size:21px;background:var(--tile-grad);-webkit-background-clip:text;background-clip:text;color:transparent}
 .trow .tv .sub{font-size:11px;font-weight:700;color:var(--ink2);margin-left:5px}
+.tile.wide{grid-column:1/-1}
+.wstats{display:grid;grid-template-columns:repeat(auto-fit,minmax(158px,1fr));gap:8px;margin:5px 0 11px}
+.wstat{background:var(--panel2);border:1px solid var(--line);border-radius:9px;padding:8px 10px}
+.wstat .tl{font-size:10.3px;color:var(--ink2);font-weight:700;text-transform:uppercase;letter-spacing:.3px}
+.wstat .tv{font-size:15px;font-weight:800;margin-top:2px;font-variant-numeric:tabular-nums}
+.wstat.hero .tv{font-size:19px;background:var(--tile-grad);-webkit-background-clip:text;background-clip:text;color:transparent}
+.wstat .sub,.mtable .sub{font-size:10.5px;font-weight:700;color:var(--ink2);margin-left:4px}
+.mwrap{overflow-x:auto}
+.mtable{width:100%;border-collapse:collapse;font-size:12px}
+.mtable th{text-align:left;font-size:10.3px;text-transform:uppercase;letter-spacing:.3px;color:var(--ink2);padding:6px 9px;border-bottom:1px solid var(--line);white-space:nowrap}
+.mtable td{padding:6px 9px;border-bottom:1px dashed var(--line);white-space:nowrap}
+.mtable .num{text-align:right;font-variant-numeric:tabular-nums}
+.mtable tfoot td{font-weight:800;border-top:2px solid var(--accent);border-bottom:none;background:linear-gradient(135deg,var(--tot-a),var(--tot-b));color:var(--tot-ink)}
+.mnote{font-size:11px;color:var(--ink2);margin-top:7px}
 .kpis{display:grid;grid-template-columns:repeat(auto-fit,minmax(152px,1fr));gap:9px}
 .kpi{background:var(--panel);border:1px solid var(--line);border-radius:11px;padding:10px 12px;box-shadow:var(--shadow);position:relative;overflow:hidden;transition:.18s}
 .kpi:hover{transform:translateY(-2px);box-shadow:var(--shadow-lg)}
@@ -210,7 +224,8 @@ const NAV_ITEMS = [
   {id:"insights",     icon:"💡", label:"Top Insights"},
   {id:"insTables",    icon:"📈", label:"Insertion Trends (Tables)"},
   {id:"insDb",        icon:"📊", label:"Insertion Trends (Databases)"},
-  {id:"dailyGrowth",  icon:"🧮", label:"Daily Growth (Estimated)"}
+  {id:"dailyGrowth",  icon:"🧮", label:"Daily Growth of BI Reports"},
+  {id:"dbGrowth",     icon:"🌐", label:"Daily Growth of Replication Server"}
 ];
 
 const DAILY_GROWTH_NOTE =
@@ -224,6 +239,16 @@ const DAILY_GROWTH_NOTE =
 +"column count × avg inserted rows per day × avg cell size. Only inserts are counted as growth, because updates "
 +"rewrite existing rows. 'Est. Table Size in 30 Days / 1 Year' = the table's current Total Size (MB) plus that "
 +"growth; index growth is not modelled, so projected sizes are a lower bound.";
+
+const DB_GROWTH_NOTE =
+ "Estimated per database, not measured server-wide. For each database, the sampled tables' combined insert "
++"growth per day is divided by those tables' combined current size to give a daily growth rate; that rate is then "
++"applied to the database's full Replicated Data Size (MB) to estimate the whole database's growth per day, 30 days "
++"and year. This assumes unsampled tables grow at the same relative rate as the sampled ones. The sampled tables "
++"are the busiest (BI-used and largest), measured in their busiest month, so the extrapolated figures lean high; "
++"'Measured Growth Per Day' is the sampled tables alone and is a lower bound. The true figure lies between the two. "
++"Databases with no sampled tables are marked 'Not sampled': no growth is estimated for them and their projected "
++"size is shown unchanged.";
 
 const SHEET_CONFIGS = {
   databases:{
@@ -553,7 +578,7 @@ const SHEET_CONFIGS = {
   },
   dailyGrowth:{
     derived:true, freeze:2,
-    title:"Daily Growth (Estimated)", sub:"Approximate data written per day per table, and what it costs in storage",
+    title:"Daily Growth of BI Reports", sub:"Approximate data written per day per sampled BI table, and what it costs in storage",
     dbKey:"Database Name",
     defaultSort:{key:"Est. Total Size Per Day (MB)", dir:"desc"},
     searchable:["Database Name","Table Name"],
@@ -591,6 +616,48 @@ const SHEET_CONFIGS = {
       {title:"Est. Total Size Per Day (MB) — top 15 tables", build:(rows)=>topNBarChart(rows,"Table Name","Est. Total Size Per Day (MB)",15,"MB",1)},
       {title:"Daily written size by database", build:(rows)=>sumByDonut(rows,"Database Name","Est. Total Size Per Day (MB)",10)}
     ]
+  },
+  dbGrowth:{
+    derived:true, freeze:2,
+    title:"Daily Growth of Replication Server", sub:"Database-wise estimate of how fast the replication server grows per day, month and year",
+    dbKey:"Database Name",
+    defaultSort:{key:"Est. DB Growth Per Day (MB)", dir:"desc"},
+    searchable:["Database Name","Estimate Basis","Fastest-Growing Table"],
+    columns:[
+      {key:"Database Name", type:"text"},
+      {key:"Table Count", type:"int"},
+      {key:"Tables Covered", type:"int"},
+      {key:"Coverage %", type:"pctsmall"},
+      {key:"Estimate Basis", type:"badge", colorMap:{"Not sampled":"muted"}},
+      {key:"Replicated Data Size (MB)", type:"size"},
+      {key:"Covered Tables Size (MB)", type:"size"},
+      {key:"Measured Growth Per Day (MB)", type:"size"},
+      {key:"Growth Rate Per Day %", type:"pctsmall"},
+      {key:"Est. DB Growth Per Day (MB)", type:"size"},
+      {key:"Est. DB Growth in 30 Days (MB)", type:"size"},
+      {key:"Est. DB Growth in 1 Year (MB)", type:"size"},
+      {key:"Est. DB Size in 30 Days (MB)", type:"size"},
+      {key:"Est. DB Size in 1 Year (MB)", type:"size"},
+      {key:"Fastest-Growing Table", type:"text"}
+    ],
+    kpis:(rows)=>{
+      const est=rows.filter(r=>r["Est. DB Growth Per Day (MB)"]!=="");
+      const day=sumBy(est,"Est. DB Growth Per Day (MB)");
+      const cur=sumBy(rows,"Replicated Data Size (MB)");
+      return [
+        {label:"Databases Estimated", value:fmtInt(est.length)+" of "+fmtInt(rows.length)},
+        {label:"Est. Growth / Day", value:fmtSize(day)},
+        {label:"Est. Growth / 30 Days", value:fmtSize(day*30)},
+        {label:"Est. Growth / Year", value:fmtSize(day*365)},
+        {label:"Current Size", value:fmtSize(cur)},
+        {label:"Est. Size in 1 Year", value:fmtSize(cur+day*365)},
+        {label:"Measured Growth / Day", value:fmtSize(sumBy(rows,"Measured Growth Per Day (MB)"))}
+      ];
+    },
+    charts:[
+      {title:"Est. DB Growth Per Day (MB) by database", build:(rows)=>topNBarChart(rows.filter(r=>r["Est. DB Growth Per Day (MB)"]!==""),"Database Name","Est. DB Growth Per Day (MB)",18,"MB",1)},
+      {title:"Share of estimated server growth", build:(rows)=>sumByDonut(rows.filter(r=>r["Est. DB Growth Per Day (MB)"]!==""),"Database Name","Est. DB Growth Per Day (MB)",10)}
+    ]
   }
 };
 
@@ -605,7 +672,8 @@ const TILE_GRADS = {
   rows:    "linear-gradient(135deg,#3f7d3a,#7aa332)",
   sps:     "linear-gradient(135deg,#b45309,#e08a2e)",
   growth:  "linear-gradient(135deg,#a1265c,#d4517e)",
-  tstore:  "linear-gradient(135deg,#34478a,#5b7fcf)"
+  tstore:  "linear-gradient(135deg,#34478a,#5b7fcf)",
+  server:  "linear-gradient(135deg,#0f5e6e,#2f8f7f 55%,#6a9f45)"
 };
 
 const STATE = {
@@ -812,11 +880,55 @@ function buildDailyGrowth(){
 }
 
 /* ------------------------------ load ------------------------------ */
+/* Replication-server growth per database: the sampled tables' growth rate (growth ÷ their
+   size) scaled to the whole database. Unsampled databases get no estimate rather than zero. */
+function buildDbGrowth(){
+  const dbs=STATE.data.databases?STATE.data.databases.rows:[];
+  const dg=STATE.data.dailyGrowth?STATE.data.dailyGrowth.rows:[];
+  const byDb=new Map();
+  dg.forEach(r=>{
+    const k=String(r["Database Name"]||"").trim().toUpperCase();
+    if(!byDb.has(k)) byDb.set(k,[]);
+    byDb.get(k).push(r);
+  });
+  return dbs.map(d=>{
+    const name=String(d["Database Name"]||"").trim();
+    const tablesTotal=toNum(d["Table Count"]);
+    const dbMB=toNum(d["Replicated Data Size (MB)"]);
+    const cov=(byDb.get(name.toUpperCase())||[]).filter(r=>r["Est. Table Growth Per Day (MB)"]!==""&&r["Current Table Size (MB)"]!=="");
+    const n=cov.length;
+    const covMB=sumBy(cov,"Current Table Size (MB)");
+    const measMB=sumBy(cov,"Est. Table Growth Per Day (MB)");
+    const rate=(n&&covMB>0)?measMB/covMB:NaN;
+    const estDay=(!isNaN(rate)&&!isNaN(dbMB))?rate*dbMB:NaN;
+    const has=!isNaN(estDay);
+    const top=cov.slice().sort((a,b)=>b["Est. Table Growth Per Day (MB)"]-a["Est. Table Growth Per Day (MB)"])[0];
+    return {
+      "Database Name":name,
+      "Table Count":isNaN(tablesTotal)?"":tablesTotal,
+      "Tables Covered":n,
+      "Coverage %":(!isNaN(tablesTotal)&&tablesTotal>0)?n/tablesTotal*100:"",
+      "Estimate Basis":n?("Sampled · "+n+" table"+(n===1?"":"s")):"Not sampled",
+      "Replicated Data Size (MB)":isNaN(dbMB)?"":dbMB,
+      "Covered Tables Size (MB)":n?covMB:"",
+      "Measured Growth Per Day (MB)":n?measMB:"",
+      "Growth Rate Per Day %":has?rate*100:"",
+      "Est. DB Growth Per Day (MB)":has?estDay:"",
+      "Est. DB Growth in 30 Days (MB)":has?estDay*30:"",
+      "Est. DB Growth in 1 Year (MB)":has?estDay*365:"",
+      "Est. DB Size in 30 Days (MB)":isNaN(dbMB)?"":dbMB+(has?estDay*30:0),
+      "Est. DB Size in 1 Year (MB)":isNaN(dbMB)?"":dbMB+(has?estDay*365:0),
+      "Fastest-Growing Table":top?top["Table Name"]:""
+    };
+  });
+}
+
 function freshSectionState(id){
   return {search:"", colSel:{}, colText:{}, sort:Object.assign({},SHEET_CONFIGS[id].defaultSort), page:1, pageSize:50};
 }
 function finalizeData(fileName,generated){
   STATE.data.dailyGrowth={rows:buildDailyGrowth(),note:DAILY_GROWTH_NOTE};
+  STATE.data.dbGrowth={rows:buildDbGrowth(),note:DB_GROWTH_NOTE};
   Object.keys(SHEET_CONFIGS).forEach(id=>{ if(!STATE.sections[id]) STATE.sections[id]=freshSectionState(id); });
   const canonical=(STATE.data.databases?STATE.data.databases.rows:[]).map(r=>String(r["Database Name"]||"").trim()).filter(Boolean);
   if(canonical.length){
@@ -1085,8 +1197,33 @@ function buildOverviewTiles(){
   const fastest=dg.filter(r=>r["Est. Table Growth Per Day (MB)"]!=="")
     .sort((a,b)=>b["Est. Table Growth Per Day (MB)"]-a["Est. Table Growth Per Day (MB)"])[0];
 
+  const srv=rowsOf("dbGrowth");
+  const srvCov=srv.filter(r=>r["Est. DB Growth Per Day (MB)"]!=="")
+    .sort((a,b)=>b["Est. DB Growth Per Day (MB)"]-a["Est. DB Growth Per Day (MB)"]);
+  const srvUncov=srv.filter(r=>r["Est. DB Growth Per Day (MB)"]==="");
+  const srvDay=sumBy(srvCov,"Est. DB Growth Per Day (MB)");
+  const srvCur=sumBy(srv,"Replicated Data Size (MB)");
+  const srvTables=sumBy(srv,"Table Count"), srvCovTables=sumBy(srv,"Tables Covered");
+  const ofSub=(a,b)=>'<span class="sub">of '+fmtInt(b)+'</span>';
+  const srvTableHtml='<div class="mwrap"><table class="mtable"><thead><tr>'
+    +'<th>Database</th><th class="num">Tables Covered</th><th class="num">Growth / Day</th>'
+    +'<th class="num">Growth / 30 Days</th><th class="num">Growth / Year</th><th class="num">Current Size</th><th class="num">Size in 1 Year</th>'
+    +'</tr></thead><tbody>'
+    +srvCov.map(r=>'<tr><td>'+escapeHtml(r["Database Name"])+'</td>'
+      +'<td class="num">'+fmtInt(r["Tables Covered"])+ofSub(0,r["Table Count"])+'</td>'
+      +'<td class="num">'+fmtSize(r["Est. DB Growth Per Day (MB)"])+'</td>'
+      +'<td class="num">'+fmtSize(r["Est. DB Growth in 30 Days (MB)"])+'</td>'
+      +'<td class="num">'+fmtSize(r["Est. DB Growth in 1 Year (MB)"])+'</td>'
+      +'<td class="num">'+fmtSize(r["Replicated Data Size (MB)"])+'</td>'
+      +'<td class="num">'+fmtSize(r["Est. DB Size in 1 Year (MB)"])+'</td></tr>').join("")
+    +'</tbody><tfoot><tr><td>Server total</td>'
+    +'<td class="num">'+fmtInt(srvCovTables)+ofSub(0,srvTables)+'</td>'
+    +'<td class="num">'+fmtSize(srvDay)+'</td><td class="num">'+fmtSize(srvDay*30)+'</td><td class="num">'+fmtSize(srvDay*365)+'</td>'
+    +'<td class="num">'+fmtSize(srvCur)+'</td><td class="num">'+fmtSize(srvCur+srvDay*365)+'</td></tr></tfoot></table></div>'
+    +(srvUncov.length?'<div class="mnote">Not sampled, so no growth estimated: '+escapeHtml(srvUncov.map(r=>r["Database Name"]).join(", "))+'. Their current size is included in the server total unchanged.</div>':"");
+
   return [
-    {title:"Storage Details", icon:"💽", grad:TILE_GRADS.storage, items:[
+    {title:"Replication's Storage Details", icon:"💽", grad:TILE_GRADS.storage, items:[
       {label:"Replicated Storage", value:fmtSize(repMB), hero:true},
       {label:"Data Size", value:fmtSize(dataMB)},
       {label:"Index Size", value:fmtSize(idxMB)},
@@ -1128,14 +1265,14 @@ function buildOverviewTiles(){
       {label:"Rows in Unused Tables", value:fmtScale(unRows)+share(unRows,totRows), title:fmtInt(unRows)+" rows"},
       {label:"Avg Rows per Table", value:fmtScale(avgRows), title:fmtInt(avgRows)+" rows"}
     ]},
-    {title:"Daily Growth (Estimated)", icon:"🧮", grad:TILE_GRADS.growth, items:[
+    {title:"Daily Growth of BI Reports", icon:"🧮", grad:TILE_GRADS.growth, items:[
       {label:"Data Written per Day", value:fmtSize(dgMB), hero:true},
       {label:"Cells Written per Day", value:fmtInt(sumBy(dg,"Cells Inserted Per Day"))},
       {label:"Projected / 30 Days", value:fmtSize(dgMB*30)},
       {label:"Projected / Year", value:fmtSize(dgMB*365)},
       {label:"Tables Covered", value:fmtInt(dg.length)}
     ]},
-    {title:"Table Storage (Estimated)", icon:"📦", grad:TILE_GRADS.tstore, items:[
+    {title:"Table Storage of BI Reports", icon:"📦", grad:TILE_GRADS.tstore, items:[
       {label:"Table Growth per Day", value:fmtSize(growDay), hero:true, title:"Σ column count × rows inserted per day × avg cell size"},
       {label:"Cells Inserted per Day", value:fmtInt(cellsDay), title:"Column count × avg rows inserted per day"},
       {label:"Avg Size per Cell", value:fmtSize(cellsDay?growDay/cellsDay:NaN), title:"Each table's data size ÷ (rows × columns), weighted by cells inserted"},
@@ -1144,6 +1281,16 @@ function buildOverviewTiles(){
       {label:"Est. Size in 1 Year", value:fmtSize(curCovered+growDay*365)+share(growDay*365,curCovered)},
       {label:"Fastest-Growing Table", value:fastest?escapeHtml(fastest["Table Name"])+'<span class="sub">('+fmtSize(fastest["Est. Table Growth Per Day (MB)"])+'/day)</span>':"—",
         title:fastest?fastest["Database Name"]+" · "+fastest["Table Name"]:""}
+    ]},
+    {title:"Daily Growth of Replication Server", icon:"🌐", grad:TILE_GRADS.server, wide:true, bodyHtml:srvTableHtml, items:[
+      {label:"Est. Server Growth per Day", value:fmtSize(srvDay), hero:true, title:"Each database's sampled growth rate applied to its full replicated size"},
+      {label:"Growth in 30 Days", value:fmtSize(srvDay*30)},
+      {label:"Growth in 1 Year", value:fmtSize(srvDay*365)},
+      {label:"Current Server Size", value:fmtSize(srvCur)},
+      {label:"Est. Server Size in 1 Year", value:fmtSize(srvCur+srvDay*365)+share(srvDay*365,srvCur)},
+      {label:"Measured Growth per Day", value:fmtSize(sumBy(srv,"Measured Growth Per Day (MB)")), title:"Sampled tables only — a lower bound"},
+      {label:"Databases Estimated", value:fmtInt(srvCov.length)+ofSub(0,srv.length)},
+      {label:"Tables Covered", value:fmtInt(srvCovTables)+ofSub(0,srvTables)}
     ]}
   ];
 }
@@ -1153,10 +1300,12 @@ function renderOverviewBlocks(root){
   const tiles=buildOverviewTiles();
   let html='<div style="display:flex;flex-direction:column;gap:12px"><div class="tiles">'
     + tiles.map(t=>
-        '<div class="tile" style="--tile-grad:'+t.grad+'">'
+        '<div class="tile'+(t.wide?" wide":"")+'" style="--tile-grad:'+t.grad+'">'
         + '<div class="tile-head" style="background:'+t.grad+'"><span class="ticon">'+t.icon+'</span>'+escapeHtml(t.title)+'</div>'
         + '<div class="tile-body">'
-        + t.items.map(i=>'<div class="trow'+(i.hero?" hero":"")+'"'+(i.title?' title="'+escapeHtml(i.title)+'"':'')+'><span class="tl">'+escapeHtml(i.label)+'</span><span class="tv">'+i.value+'</span></div>').join("")
+        + (t.wide
+            ? '<div class="wstats">'+t.items.map(i=>'<div class="wstat'+(i.hero?" hero":"")+'"'+(i.title?' title="'+escapeHtml(i.title)+'"':'')+'><div class="tl">'+escapeHtml(i.label)+'</div><div class="tv">'+i.value+'</div></div>').join("")+'</div>'+(t.bodyHtml||"")
+            : t.items.map(i=>'<div class="trow'+(i.hero?" hero":"")+'"'+(i.title?' title="'+escapeHtml(i.title)+'"':'')+'><span class="tl">'+escapeHtml(i.label)+'</span><span class="tv">'+i.value+'</span></div>').join(""))
         + '</div></div>').join("")
     + '</div>';
   html+='<div><div class="groupbar" style="background:'+TILE_GRADS.storage+'">Distribution</div><div class="charts" style="margin-top:7px">'

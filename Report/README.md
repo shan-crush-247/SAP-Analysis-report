@@ -13,7 +13,8 @@ every single open.
 - Pick a section in the left sidebar: **Overview & Databases** (the landing page — summary
   KPIs grouped by theme and charts on top, the per-database table underneath), Tables,
   Columns, Stored Procedures, SP → Table Lineage, View Lineage, Unused Tables, Top Insights,
-  the two Insertion Trend views, and **Daily Growth (Estimated)**.
+  the two Insertion Trend views, **Daily Growth of BI Reports**, and **Daily Growth of
+  Replication Server** (database-wise server growth per day, 30 days and year).
 - Every column heading has an **Excel-style dropdown filter**: tick the values you want, or
   type in "Text contains". Each entry shows how many rows carry that value. Headings also
   sort on click, and there's a section-wide search plus a database filter. **Clear filters**
