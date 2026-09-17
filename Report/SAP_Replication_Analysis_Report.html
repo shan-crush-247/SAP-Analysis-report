@@ -87,6 +87,8 @@ button{font-family:inherit}
 .mtable .num{text-align:right;font-variant-numeric:tabular-nums}
 .mtable tfoot td{font-weight:800;border-top:2px solid var(--accent);border-bottom:none;background:linear-gradient(135deg,var(--tot-a),var(--tot-b));color:var(--tot-ink)}
 .mnote{font-size:11px;color:var(--ink2);margin-top:7px}
+.msub{font-size:11px;font-weight:800;text-transform:uppercase;letter-spacing:.5px;margin:14px 0 4px;display:flex;align-items:center;gap:7px}
+.msub:before{content:"";width:3px;height:12px;border-radius:2px;background:var(--tile-grad)}
 .kpis{display:grid;grid-template-columns:repeat(auto-fit,minmax(152px,1fr));gap:9px}
 .kpi{background:var(--panel);border:1px solid var(--line);border-radius:11px;padding:10px 12px;box-shadow:var(--shadow);position:relative;overflow:hidden;transition:.18s}
 .kpi:hover{transform:translateY(-2px);box-shadow:var(--shadow-lg)}
@@ -249,7 +251,29 @@ const DB_GROWTH_NOTE =
 +"from the replication catalogue) and summed per database. Per Day and Per Month come from each table's busiest "
 +"calendar month, Per Year from each table's busiest calendar year; those peaks need not coincide across tables, so "
 +"the figures lean high. Index growth is not included. 'Data Check' compares each database's table and row counts "
-+"with the replication catalogue.";
++"with the replication catalogue. Table types are assigned by name, first match wins: Temp (name contains TMP/TEMP); "
++"Backup / Copies (BAK, BKP, BACKUP, COPY, OLD, or a trailing date such as oinm140417); User-Defined (@ prefix); "
++"Transaction (SAP B1 journal and inventory-transaction tables: OINM, OIVL, IVL1, OITL, ITL1, OILM, ILM1, OBTL, BTL1, "
++"OBVL, OSVL, OJDT, JDT1, JDT2, OIVQ, OIVE, OIVK, OIQR, OIQI); History (A + 3 letters, or A + 2 letters + digits); "
++"Line Level (3 letters + digits, e.g. INV1); Header / Master (O + 3 characters, e.g. OINV); otherwise Other / Custom. "
++"Linkage overlaps the types: 'Linked to BI' is BI Used? = Yes in the catalogue; 'Linked (Any)' also includes tables "
++"with any reference count and every table named in the SP and view lineage sheets.";
+
+/* Replication growth by table type. Each type maps to its per-database column. */
+const GROWTH_CAT_COLS = {
+  "Header / Master":    "Header Growth Per Day (MB)",
+  "Line Level":         "Line Growth Per Day (MB)",
+  "Transaction":        "Transaction Growth Per Day (MB)",
+  "Temp":               "Temp Growth Per Day (MB)",
+  "History (A-tables)": "History Growth Per Day (MB)",
+  "User-Defined (@)":   "UDT Growth Per Day (MB)",
+  "Backup / Copies":    "Backup Growth Per Day (MB)",
+  "Other / Custom":     "Other Growth Per Day (MB)"
+};
+/* SAP B1 journal and inventory-transaction tables; they share the O-prefix/line naming of
+   document headers and lines, so they can only be told apart by name. */
+const TRANSACTION_TABLES = new Set(["OINM","OIVL","IVL1","OITL","ITL1","OILM","ILM1","OBTL","BTL1","OBVL","OSVL",
+  "OJDT","JDT1","JDT2","OIVQ","OIVE","OIVK","OIQR","OIQI"]);
 
 const SHEET_CONFIGS = {
   databases:{
@@ -641,6 +665,9 @@ const SHEET_CONFIGS = {
       {key:"Est. Growth Per Year (MB)", type:"size"},
       {key:"Est. DB Size in 1 Year (MB)", type:"size"},
       {key:"Est. Growth Per Year % of DB", type:"pctsmall"},
+      ...Object.values(GROWTH_CAT_COLS).map(k=>({key:k, type:"size"})),
+      {key:"Linked to BI Growth Per Day (MB)", type:"size"},
+      {key:"Linked (Any) Growth Per Day (MB)", type:"size"},
       {key:"Fastest-Growing Table", type:"text"},
       {key:"Growth Status", type:"badge", colorMap:{"Measured":"good","Not Available":"muted"}},
       {key:"Data Check", type:"badge", colorMap:{"Matches":"good","Differs":"warn","Not in catalogue":"bad"}},
@@ -657,12 +684,18 @@ const SHEET_CONFIGS = {
         {label:"Current Size", value:fmtSize(cur)},
         {label:"Size in 1 Year", value:fmtSize(cur+yr)},
         {label:"Rows Inserted / Day", value:fmtInt(sumBy(m,"Rows Inserted Per Day"))},
+        {label:"Temp Tables Growth / Day", value:fmtSize(sumBy(m,"Temp Growth Per Day (MB)"))},
+        {label:"Linked to BI Growth / Day", value:fmtSize(sumBy(m,"Linked to BI Growth Per Day (MB)"))},
         {label:"Data Check", value:fmtInt(rows.filter(r=>r["Data Check"]==="Matches").length)+" of "+fmtInt(rows.length)+" match"}
       ];
     },
     charts:[
       {title:"Est. Growth Per Day (MB) by database", build:(rows)=>topNBarChart(rows.filter(r=>r["Growth Status"]==="Measured"),"Database Name","Est. Growth Per Day (MB)",18,"MB",1)},
-      {title:"Share of server growth per year", build:(rows)=>sumByDonut(rows.filter(r=>r["Growth Status"]==="Measured"),"Database Name","Est. Growth Per Year (MB)",10)}
+      {title:"Share of server growth per year", build:(rows)=>sumByDonut(rows.filter(r=>r["Growth Status"]==="Measured"),"Database Name","Est. Growth Per Year (MB)",10)},
+      {title:"Growth per day by table type", build:(rows)=>{
+        const cats=Object.keys(GROWTH_CAT_COLS).map(c=>[c,sumBy(rows,GROWTH_CAT_COLS[c])]).filter(e=>e[1]>0).sort((a,b)=>b[1]-a[1]);
+        return donutSpec(cats.map(e=>e[0]),cats.map(e=>+e[1].toFixed(3)),fmtSize);
+      }}
     ]
   }
 };
@@ -889,46 +922,83 @@ function buildDailyGrowth(){
 /* Replication-server growth per database, from the all-tables growth workbook. Its row
    counts add inserts and updates; only inserts add storage, so sizes use inserts, each
    table's rows converted with its own average row size from the replication catalogue. */
+function growthCategoryOf(tableName){
+  const u=String(tableName).split(".").pop().trim().toUpperCase();
+  if(/TMP|TEMP/.test(u)) return "Temp";
+  if(/BAK|BKP|BACKUP|COPY|(^|_)OLD/.test(u) || /\d{6,8}$/.test(u) || /_\d{1,2}_\d{1,2}_\d{2,4}$/.test(u)) return "Backup / Copies";
+  if(u[0]==="@") return "User-Defined (@)";
+  if(TRANSACTION_TABLES.has(u)) return "Transaction";
+  if(/^A[A-Z]{3}$/.test(u) || /^A[A-Z]{2}\d{1,2}$/.test(u)) return "History (A-tables)";
+  if(/^[A-Z]{3}\d{1,2}$/.test(u)) return "Line Level";
+  if(/^O[A-Z0-9]{3}$/.test(u)) return "Header / Master";
+  return "Other / Custom";
+}
+function growthTableKey(db,table){ return String(db).trim().toUpperCase()+"|"+String(table).split(".").pop().trim().toLowerCase(); }
+/* "Linked to BI" = BI Used? Yes in the catalogue. "Linked (any)" adds tables with any
+   reference count and every table named in the SP and view lineage sheets. */
+function linkedTableSets(){
+  const bi=new Set(), any=new Set();
+  (STATE.data.tables?STATE.data.tables.rows:[]).forEach(r=>{
+    const k=growthTableKey(r["Database Name"],r["Table Name"]);
+    if(String(r["BI Used?"]).trim().toLowerCase()==="yes"){ bi.add(k); any.add(k); }
+    if(toNum(r["Total Reference Count"])>0) any.add(k);
+  });
+  (STATE.data.splineage?STATE.data.splineage.rows:[]).forEach(r=>{ if(r.SAPDatabase&&r.SAPTable) any.add(growthTableKey(r.SAPDatabase,r.SAPTable)); });
+  (STATE.data.viewlineage?STATE.data.viewlineage.rows:[]).forEach(r=>{ if(r.SAPDatabase&&r.ReferencedObject) any.add(growthTableKey(r.SAPDatabase,r.ReferencedObject)); });
+  return {bi,any};
+}
+/* One entry per scanned table: its type, linkage and insert growth sized in MB. */
+function buildGrowthTables(){
+  const g=STATE.growth;
+  if(!g) return [];
+  const n=v=>{ const x=Number(v); return (v===""||v==null||isNaN(x))?NaN:x; };
+  const cat=new Map();
+  (STATE.data.tables?STATE.data.tables.rows:[]).forEach(r=>cat.set(growthTableKey(r["Database Name"],r["Table Name"]),r));
+  const links=linkedTableSets();
+  return g.detail.map(d=>{
+    const k=growthTableKey(d["Database Name"],d["Table Name"]);
+    const t=cat.get(k);
+    const i=n(d["Avg Insert / Day (approx)"]), u=n(d["Avg Update / Day (approx)"]);
+    const rc=t?n(t["Row Count"]):NaN, dm=t?n(t["Data Size (MB)"]):NaN;
+    const rowMB=(rc>0&&!isNaN(dm))?dm/rc:NaN;
+    const grows=i>0&&!isNaN(rowMB);
+    const mRows=n(d["Busiest Month Rows (Insert)"]), yRows=n(d["Busiest Year Rows (Insert)"]);
+    return {
+      dbKey:String(d["Database Name"]).trim().toUpperCase(), name:String(d["Table Name"]),
+      category:growthCategoryOf(d["Table Name"]), linkedBI:links.bi.has(k), linkedAny:links.any.has(k),
+      ok:String(d["Status / Note"]).trim()==="OK",
+      insDay:isNaN(i)?0:i, updDay:isNaN(u)?0:u,
+      dayMB:grows?i*rowMB:0,
+      monthMB:(grows&&!isNaN(mRows))?mRows*rowMB:0,
+      yearMB:(grows&&!isNaN(yRows))?yRows*rowMB:0
+    };
+  });
+}
 function buildDbGrowth(){
   const g=STATE.growth;
   if(!g) return [];
   const n=v=>{ const x=Number(v); return (v===""||v==null||isNaN(x))?NaN:x; };
   const cons=new Map((STATE.data.databases?STATE.data.databases.rows:[]).map(r=>[String(r["Database Name"]).trim().toUpperCase(),r]));
-  const cat=new Map();
-  (STATE.data.tables?STATE.data.tables.rows:[]).forEach(r=>cat.set(String(r["Database Name"]).trim().toUpperCase()+"|"+String(r["Table Name"]).trim().toLowerCase(),r));
   const byDb=new Map();
-  g.detail.forEach(d=>{
-    const k=String(d["Database Name"]).trim().toUpperCase();
-    if(!byDb.has(k)) byDb.set(k,[]);
-    byDb.get(k).push(d);
-  });
+  (STATE.growthTables||[]).forEach(t=>{ if(!byDb.has(t.dbKey)) byDb.set(t.dbKey,[]); byDb.get(t.dbKey).push(t); });
+  const total=(list,f)=>list.reduce((a,t)=>a+t[f],0);
   return g.summary.map(s=>{
     const name=String(s["Database Name"]).trim(), key=name.toUpperCase();
-    const c=cons.get(key), det=byDb.get(key)||[];
-    let insDay=0,updDay=0,okTables=0,dayMB=0,monthMB=0,yearMB=0,top="",topMB=0;
-    det.forEach(d=>{
-      const i=n(d["Avg Insert / Day (approx)"]), u=n(d["Avg Update / Day (approx)"]);
-      if(!isNaN(i)) insDay+=i;
-      if(!isNaN(u)) updDay+=u;
-      if(String(d["Status / Note"]).trim()==="OK") okTables++;
-      if(isNaN(i)||i<=0) return;
-      const t=cat.get(key+"|"+String(d["Table Name"]).split(".").pop().trim().toLowerCase());
-      const rc=t?n(t["Row Count"]):NaN, dm=t?n(t["Data Size (MB)"]):NaN;
-      if(!(rc>0)||isNaN(dm)) return;
-      const rowMB=dm/rc, tMB=i*rowMB;
-      dayMB+=tMB;
-      const mRows=n(d["Busiest Month Rows (Insert)"]), yRows=n(d["Busiest Year Rows (Insert)"]);
-      if(!isNaN(mRows)) monthMB+=mRows*rowMB;
-      if(!isNaN(yRows)) yearMB+=yRows*rowMB;
-      if(tMB>topMB){ topMB=tMB; top=String(d["Table Name"]); }
-    });
+    const c=cons.get(key), tabs=byDb.get(key)||[];
+    const insDay=total(tabs,"insDay"), updDay=total(tabs,"updDay"), okTables=tabs.filter(t=>t.ok).length;
+    const dayMB=total(tabs,"dayMB"), monthMB=total(tabs,"monthMB"), yearMB=total(tabs,"yearMB");
+    const topT=tabs.reduce((best,t)=>t.dayMB>(best?best.dayMB:0)?t:best,null), top=topT?topT.name:"";
     const measured=!isNaN(n(s["Approx Growth Per Day (rows)"]));
+    const byType={};
+    Object.keys(GROWTH_CAT_COLS).forEach(cat=>{ byType[GROWTH_CAT_COLS[cat]]=measured?total(tabs.filter(t=>t.category===cat),"dayMB"):""; });
+    byType["Linked to BI Growth Per Day (MB)"]=measured?total(tabs.filter(t=>t.linkedBI),"dayMB"):"";
+    byType["Linked (Any) Growth Per Day (MB)"]=measured?total(tabs.filter(t=>t.linkedAny),"dayMB"):"";
     const dbMB=c?n(c["Replicated Data Size (MB)"]):NaN;
     const tNew=n(s["Total Tables In DB"]), rNew=n(s["Total Row Count"]);
     const tOld=c?n(c["Table Count"]):NaN, rOld=c?n(c["Total Rows"]):NaN;
     const same=c&&tNew===tOld&&rNew===rOld;
     const signed=v=>(v>=0?"+":"")+fmtInt(v);
-    return {
+    return Object.assign({
       "Database Name":name,
       "Total Tables In DB":isNaN(tNew)?"":tNew,
       "Tables Sampled":isNaN(n(s["Tables Sampled"]))?"":n(s["Tables Sampled"]),
@@ -950,7 +1020,7 @@ function buildDbGrowth(){
       "Data Check":!c?"Not in catalogue":(same?"Matches":"Differs"),
       "Data Check Detail":!c?"No replication catalogue entry for this database":
         (same?"Table and row counts match":"Tables "+signed(tNew-tOld)+" ("+fmtInt(tNew)+" vs "+fmtInt(tOld)+"), rows "+signed(rNew-rOld))
-    };
+    }, byType);
   });
 }
 
@@ -972,6 +1042,7 @@ function freshSectionState(id){
 }
 function finalizeData(fileName,generated){
   STATE.data.dailyGrowth={rows:buildDailyGrowth(),note:DAILY_GROWTH_NOTE};
+  STATE.growthTables=buildGrowthTables();
   STATE.data.dbGrowth={rows:buildDbGrowth(),
     note:STATE.growth ? DB_GROWTH_NOTE+" Source workbook ("+STATE.growth.name+") note: "+STATE.growth.note
                       : "The all-tables growth workbook (lib/growth-data.js) is not loaded, so replication server growth cannot be shown."};
@@ -1252,9 +1323,31 @@ function buildOverviewTiles(){
   const srvCur=sumBy(srv,"Replicated Data Size (MB)");
   const srvTables=sumBy(srv,"Total Tables In DB"), srvGrowTables=sumBy(srv,"Tables With Growth Data"), srvScanned=sumBy(srv,"Tables Sampled");
   const ofSub=b=>'<span class="sub">of '+fmtInt(b)+'</span>';
+  const gt=STATE.growthTables||[];
+  const agg=list=>({scanned:list.length, growing:list.filter(t=>t.dayMB>0).length,
+    ins:list.reduce((a,t)=>a+t.insDay,0), day:list.reduce((a,t)=>a+t.dayMB,0),
+    month:list.reduce((a,t)=>a+t.monthMB,0), year:list.reduce((a,t)=>a+t.yearMB,0)});
+  const gAll=agg(gt);
+  const sz=v=>v>0?fmtSize(v):"—";
+  const bdRow=(label,a)=>'<tr><td>'+escapeHtml(label)+'</td><td class="num">'+fmtInt(a.growing)+ofSub(a.scanned)+'</td>'
+    +'<td class="num">'+fmtInt(a.ins)+'</td><td class="num">'+sz(a.day)+'</td><td class="num">'+sz(a.month)+'</td>'
+    +'<td class="num">'+sz(a.year)+'</td><td class="num">'+fmtPct(gAll.day?a.day/gAll.day*100:0)+'</td></tr>';
+  const bdHead=first=>'<thead><tr><th>'+first+'</th><th class="num">Growing Tables</th><th class="num">Rows Inserted / Day</th>'
+    +'<th class="num">Growth / Day</th><th class="num">Growth / Month</th><th class="num">Growth / Year</th><th class="num">Share of Growth</th></tr></thead>';
+  const typeHtml=!gt.length?"":
+     '<div class="msub">By table type</div><div class="mwrap"><table class="mtable">'+bdHead("Table Type")+'<tbody>'
+    +Object.keys(GROWTH_CAT_COLS).map(cat=>bdRow(cat,agg(gt.filter(t=>t.category===cat)))).join("")
+    +'</tbody><tfoot>'+bdRow("Server total",gAll)+'</tfoot></table></div>'
+    +'<div class="msub">Linked tables</div><div class="mwrap"><table class="mtable">'+bdHead("Linkage")+'<tbody>'
+    +bdRow("Linked to BI reports",agg(gt.filter(t=>t.linkedBI)))
+    +bdRow("Linked by any SP or view (incl. BI)",agg(gt.filter(t=>t.linkedAny)))
+    +bdRow("Not linked",agg(gt.filter(t=>!t.linkedAny)))
+    +'</tbody></table></div>'
+    +'<div class="mnote">Linked to BI is a subset of linked by any SP or view; linked + not linked = server total. Table types are assigned by name — see the Methodology note on the Replication Server page.</div>'
+    +'<div class="msub">By database</div>';
   const srvTableHtml=!srv.length
     ? '<div class="mnote">The all-tables growth workbook is not loaded, so server growth cannot be shown.</div>'
-    : '<div class="mwrap"><table class="mtable"><thead><tr>'
+    : typeHtml+'<div class="mwrap"><table class="mtable"><thead><tr>'
     +'<th>Database</th><th class="num">Tables With Growth Data</th><th class="num">Rows Inserted / Day</th>'
     +'<th class="num">Growth / Day</th><th class="num">Growth / Month</th><th class="num">Growth / Year</th>'
     +'<th class="num">Current Size</th><th class="num">Size in 1 Year</th>'
