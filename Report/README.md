@@ -14,7 +14,8 @@ every single open.
   KPIs grouped by theme and charts on top, the per-database table underneath), Tables,
   Columns, Stored Procedures, SP → Table Lineage, View Lineage, Unused Tables, Top Insights,
   the two Insertion Trend views, **Daily Growth of BI Reports**, and **Daily Growth of
-  Replication Server** (measured database-wise growth per day, month and year).
+  Replication Server** (database-wise growth measured from the DBA daily checklist, per day,
+  month and year).
 - Every column heading has an **Excel-style dropdown filter**: tick the values you want, or
   type in "Text contains". Each entry shows how many rows carry that value. Headings also
   sort on click, and there's a section-wide search plus a database filter. **Clear filters**

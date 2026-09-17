@@ -73,6 +73,22 @@ row 0 and **headers on row 2**; `02_Table_Wise_Growth_Detail` has headers on row
 - Per Year is each table's busiest calendar year, not per-day × 365 — don't "fix" that.
 - Regenerate it with the same headless-Chrome pack step as below, XHR-ing this workbook instead.
 
+### Third data file: `checklist-data.js`
+
+`Report\lib\checklist-data.js` (`window.EMBEDDED_CHECKLIST = {name, sheet, generated, gz}`) packs the
+**`DB Size`** sheet of `Core File\DBA Daily Checklist.xlsx` as `{name, sheet, generated,
+dbs:[{name, ip, obs:[[excelSerialDate, sizeMB], …]}]}`. It drives the Replication Server growth
+tile and page, which trend each database's readings by least squares. Notes:
+- That sheet's dates sit in row 3 (Excel serials) with `DB Size` / `Growth Diff Previous day`
+  sub-headers in row 4; size columns are the ones carrying a date. Non-numeric cells
+  (`Sunday`, `Holiday`, `Leave`) are skipped.
+- The checklist tracks the **source** databases that feed replication, on their own servers, so
+  their sizes differ from the replica's catalogue sizes — don't treat the two as interchangeable.
+- Status rules: Growing / Shrinking / Low confidence (<20 readings or <30 days) / No readings.
+  Totals count growing databases only, so a maintenance shrink can't cancel real growth.
+- The file is usually **open in Excel**, which locks it. Copy it to a temp path first and pack
+  from the copy, otherwise reading fails with a sharing violation.
+
 ### Regenerating `embedded-data.js` after the workbook changes
 
 The embedded data is a snapshot, so it must be rebuilt whenever `Core File\*.xlsx` changes.
