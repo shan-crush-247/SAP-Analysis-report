@@ -59,6 +59,9 @@ button{font-family:inherit}
 
 /* Overview subject tiles */
 .tiles{display:grid;grid-template-columns:repeat(auto-fit,minmax(272px,1fr));gap:12px}
+/* Growth and BI tiles hold few rows, so they read better at a fixed narrow width
+   than stretched across half the viewport. */
+.tiles.compact{grid-template-columns:repeat(auto-fill,minmax(250px,290px));justify-content:start}
 .tile{background:var(--panel);border:1px solid var(--line);border-radius:14px;overflow:hidden;box-shadow:var(--shadow);transition:.18s}
 .tile:hover{transform:translateY(-3px);box-shadow:var(--shadow-lg)}
 .tile-head{padding:11px 14px;color:#fff;display:flex;align-items:center;gap:9px;font-weight:800;font-size:12.7px;letter-spacing:.25px;position:relative}
@@ -1395,9 +1398,6 @@ function buildOverviewTiles(){
   const srvMDay=sumBy(srvMg,"Growth Without LDF Per Day (MB)");
   const srvNet=sumBy(srv,"Measured Growth Per Day (MB)");
   const ofSub=b=>'<span class="sub">of '+fmtInt(b)+'</span>';
-  const trackedFrom=srv.map(r=>r["Tracked From"]).filter(Boolean).sort();
-  const trackedTo=srv.map(r=>r["Tracked To"]).filter(Boolean).sort();
-  const period=trackedFrom.length?trackedFrom[0]+" → "+trackedTo[trackedTo.length-1]:"—";
   const sparkTotal=sparkline(checklistServerSeries("total"),"#2f8f7f");
   const sparkMdf=sparkline(checklistServerSeries("mdf"),"#a35fa0");
 
@@ -1465,7 +1465,7 @@ function buildOverviewTiles(){
         title:fastest?fastest["Database Name"]+" · "+fastest["Table Name"]:""}
     ]},
     {title:"Growth of Replication Server", icon:"🌐", grad:TILE_GRADS.server,
-     foot:sparkTotal?'<div class="tile-foot">'+sparkTotal+'<span class="foot-cap">Server size, '+escapeHtml(period)+'</span></div>':"", items:[
+     foot:sparkTotal?'<div class="tile-foot">'+sparkTotal+'</div>':"", items:[
       {label:"Growth per Day", value:fmtSize(srvDay), hero:true, title:"Trend through the checklist's daily size readings (data + log), growing databases only"},
       {label:"Growth per Month", value:fmtSize(srvDay*30)},
       {label:"Growth per Year", value:fmtSize(srvDay*365)},
@@ -1510,8 +1510,11 @@ function renderOverviewBlocks(root){
     return (ia<0?99:ia)-(ib<0?99:ib);
   });
   let html='<div style="display:flex;flex-direction:column;gap:14px">'
-    + groups.map(g=>'<div><div class="groupbar" style="background:'+(GROUP_GRADS[g.title]||TILE_GRADS.db)+'">'+escapeHtml(g.title)+'</div>'
-        + '<div class="tiles" style="margin-top:8px">'+g.tiles.map(renderTile).join("")+'</div></div>').join("");
+    + groups.map(g=>{
+        const compact=(g.title==="Replication Growth"||g.title==="BI Reports")?" compact":"";
+        return '<div><div class="groupbar" style="background:'+(GROUP_GRADS[g.title]||TILE_GRADS.db)+'">'+escapeHtml(g.title)+'</div>'
+          + '<div class="tiles'+compact+'" style="margin-top:8px">'+g.tiles.map(renderTile).join("")+'</div></div>';
+      }).join("");
   html+='<div><div class="groupbar" style="background:'+TILE_GRADS.storage+'">Distribution</div><div class="charts" style="margin-top:7px">'
     + [["ovStorage","Replicated Storage by Database (GB)"],["ovStatus","Table Usage Status"],
        ["ovLevel","Usage Level (BI-used tables)"]]
