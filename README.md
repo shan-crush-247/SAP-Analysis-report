@@ -38,8 +38,8 @@ Twelve sections, reachable from the sidebar:
 | Unused Tables | Tables replicated but never referenced by BI |
 | Top Insights | The 50 largest tables, storage against BI usage |
 | Insertion Trends | Approximate daily insert/update volume, per table and per database |
-| Daily Growth of BI Reports | Estimated data written per day per sampled BI table — cells written (column count × rows/day), storage cost per day, and each table's projected size in 30 days and 1 year |
-| Daily Growth of Replication Server | Measured database growth from the DBA daily checklist (`Core File/DBA Daily Checklist.xlsx`) — a trend through ~4.5 months of daily size readings, per day, month and year, reported both with and without transaction logs (MDF/LDF), projected from the replication server's own current size (7.13 TB, data + log), with shrinks and short series flagged and excluded from totals |
+| Daily Growth of BI Reports | All 474 BI-used tables with their linear growth per day, month and year, and projected size in 1 year |
+| Daily Growth of Replication Server | Database-wise growth on the linear average — each database's current size (from `analysis_2.xlsx`) divided by the time since go-live — reported with and without transaction logs, alongside the replica's data/log split |
 
 Every section supports Excel-style per-column dropdown filters, click-to-sort on any column,
 a section-wide search, a database filter, frozen leading columns, and a TOTAL row summing
@@ -47,10 +47,13 @@ each numeric column across all filtered rows. Column headings match the workbook
 **⤓ Export Excel** and **⤓ Export HTML** save exactly what's currently filtered and sorted,
 totals included — the HTML export embeds the charts as images so it stands alone.
 
-The Daily Growth figures are **derived, not measured**: each table's average row size comes
-from its own catalogue entry (`Data Size (MB) ÷ Row Count`) multiplied by its approximate
-rows written per day. It covers only the sampled tables, so treat it as a lower bound. The
-method is spelled out in the Methodology panel on that page.
+Growth everywhere is a **straight-line average**, not a measurement: the size workbook is a
+single snapshot, so growth per period = current size ÷ time since go-live (1 Jan 2016 by
+default, editable in the top bar; snapshot 17 Sep 2026 — 3,912 days). Real growth is usually
+front-loaded or accelerating, so the recent rate is likely higher than this average for busy
+databases and lower for stable ones, and log size reflects log management rather than data
+volume — which makes the without-LDF figures the better indicator. The Methodology panel on
+the growth pages spells this out.
 
 ## Repository layout
 
@@ -60,7 +63,6 @@ method is spelled out in the Methodology panel on that page.
 | `Report/` | The generated dashboard — open `SAP_Replication_Analysis_Report.html` |
 | `Report/lib/embedded-data.js` | The analysed data, pre-parsed and gzipped (~2.3 MB); this is what auto-loads |
 | `Report/lib/growth-data.js` | The all-tables growth scan, pre-parsed and gzipped (~100 KB); supplies row-activity figures |
-| `Report/lib/checklist-data.js` | Daily database size readings from the DBA checklist (~18 KB); drives the Replication Server growth tile and page |
 | `Report/lib/replica-size-data.js` | The replica's own size per database from `analysis_2.xlsx` (~1 KB); every size in the report is rescaled to this footprint |
 | `Report/lib/*.min.js` | SheetJS and Chart.js, vendored so the report works offline |
 | `Reference Report/` | An unrelated SCM dashboard, kept only as a design reference |

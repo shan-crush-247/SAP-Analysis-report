@@ -73,7 +73,22 @@ row 0 and **headers on row 2**; `02_Table_Wise_Growth_Detail` has headers on row
 - Per Year is each table's busiest calendar year, not per-day × 365 — don't "fix" that.
 - Regenerate it with the same headless-Chrome pack step as below, XHR-ing this workbook instead.
 
-### Third data file: `checklist-data.js`
+### Growth method (applies to every screen)
+
+Growth anywhere in the report is a **straight-line average**: `current size ÷ periods elapsed`,
+where the period runs from go-live (default 1 Jan 2016, editable in the top bar and stored in
+`localStorage`) to the snapshot date (`SNAPSHOT_DATE`, 2026-09-17) — 3,912 days, 128.53 months
+(30.4375 days each), 10.71 years (365.25 days). `applyLinearGrowth()` writes the per-day and
+per-year columns onto the databases, tables, unused and insights rows, and must be re-run (never
+re-applied cumulatively) whenever the go-live date changes; `applyReplicaScaling()` by contrast
+multiplies sizes in place and must run exactly once per load. Don't reintroduce a second method
+alongside it — the measured-trend approach below was removed for that reason.
+
+### Third data file: `checklist-data.js` (retired)
+
+No longer generated or loaded: the DBA checklist's least-squares trend was replaced by the
+linear method above, so the file was deleted (recoverable from git history if measured growth is
+ever wanted again). The notes below describe how it was packed.
 
 `Report\lib\checklist-data.js` (`window.EMBEDDED_CHECKLIST = {name, sheet, generated, gz}`) packs the
 **`DB Size`** sheet of `Core File\DBA Daily Checklist.xlsx` as `{name, sheet, generated,
