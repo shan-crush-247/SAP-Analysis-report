@@ -228,6 +228,30 @@ const DAILY_GROWTH_NOTE =
 +"rewrite existing rows. 'Est. Table Size in 30 Days / 1 Year' = the table's current Total Size (MB) plus that "
 +"growth; index growth is not modelled, so projected sizes are a lower bound.";
 
+/* Current size of each database on the replication server itself, split into data and log
+   files (DBA size query snapshot). Growth trends come from the checklist, which measures the
+   source databases; these are the replica's own figures, so projections start from here. */
+const REPLICA_SIZES = {
+  "BBLIve":               {data:1120926,     log:957666.5,  total:2078592.5},
+  "ATCLive":              {data:1364386.438, log:467.25,    total:1364853.688},
+  "AntsProdLive":         {data:1342069,     log:459.125,   total:1342528.125},
+  "RHLLive":              {data:961162,      log:263.6875,  total:961425.6875},
+  "RRFLive":              {data:569637,      log:40811,     total:610448},
+  "RRLive":               {data:390947,      log:984.375,   total:391931.375},
+  "SCM_MMD_Live":         {data:235848,      log:1667.9375, total:237515.9375},
+  "AKGLIVE":              {data:205309,      log:35.4375,   total:205344.4375},
+  "VTLive":               {data:108827.1875, log:34.875,    total:108862.0625},
+  "VGLive":               {data:57507.0625,  log:655,       total:58162.0625},
+  "TSCLive":              {data:41096,       log:2627.9375, total:43723.9375},
+  "OOPLive":              {data:33672,       log:72,        total:33744},
+  "ATLive":               {data:13192,       log:968,       total:14160},
+  "ENESLive":             {data:5704,        log:776,       total:6480},
+  "SmartDocLive":         {data:5128,        log:387.9375,  total:5515.9375},
+  "WorkFlowEngineLive":   {data:4104,        log:387.9375,  total:4491.9375},
+  "VPMLive":              {data:2888,        log:456,       total:3344},
+  "OOPWorkFlowEngineLive":{data:264,         log:3.882812,  total:267.882812}
+};
+
 const DB_GROWTH_NOTE =
  "Measured from the DBA Daily Checklist ('DB Size' sheet), which records each database's size in MB on working days. "
 +"Growth Per Day is the least-squares trend through those readings, and Month and Year are that daily trend over 30 "
@@ -235,8 +259,9 @@ const DB_GROWTH_NOTE =
 +"falling trend, typically a restore, shrink or purge rather than real loss of data), Low confidence (too few readings "
 +"or too short a period to trend) and No readings. Server totals count growing databases only, so a one-off "
 +"maintenance shrink cannot cancel out real growth; the Net Trend figure includes every database for comparison. "
-+"Projected size applies that growth to the database's Replicated Data Size (MB) from the replication catalogue — the "
-+"checklist tracks the source databases that feed replication, so their sizes differ from the replica's own figures. "
++"Projected size starts from the replication server's own current size, taken from a DBA size query and split into "
++"data (MDF) and log (LDF) files, with the measured growth added on top. The checklist measures the source databases "
++"that feed replication, so the trend comes from there while the baseline is the replica itself. "
 +"From 1 June 2026 the checklist records each day's size split into MDF (data files) and LDF (transaction logs); "
 +"the 'without LDF' figures trend the MDF series alone, so they exclude log growth, which is driven by backup and "
 +"recovery-model settings rather than by data volume. May's readings carry only a combined total, so the without-LDF "
@@ -649,10 +674,13 @@ const SHEET_CONFIGS = {
       {key:"Growth Without LDF Per Day (MB)", type:"size"},
       {key:"Growth Without LDF Per Month (MB)", type:"size"},
       {key:"Growth Without LDF Per Year (MB)", type:"size"},
-      {key:"Replicated Data Size (MB)", type:"size"},
-      {key:"Est. DB Size in 1 Year (MB)", type:"size"},
-      {key:"Est. DB Size in 1 Year without LDF (MB)", type:"size"},
-      {key:"Growth Per Year % of DB", type:"pctsmall"},
+      {key:"Replica Data Size (MB)", type:"size"},
+      {key:"Replica Log Size (MB)", type:"size"},
+      {key:"Replica Total Size (MB)", type:"size"},
+      {key:"Replica Log Share %", type:"pctsmall"},
+      {key:"Est. Replica Size in 1 Year (MB)", type:"size"},
+      {key:"Est. Replica Data Size in 1 Year (MB)", type:"size"},
+      {key:"Growth Per Year % of Replica", type:"pctsmall"},
       {key:"Rows Inserted Per Day", type:"num1"},
       {key:"Rows Updated Per Day", type:"num1"},
       {key:"Tables With Growth Data", type:"int"},
@@ -663,17 +691,17 @@ const SHEET_CONFIGS = {
     kpis:(rows)=>{
       const grow=rows.filter(r=>r["Checklist Status"]==="Growing");
       const mGrow=rows.filter(r=>r["Data File Status"]==="Growing");
-      const day=sumBy(grow,"Measured Growth Per Day (MB)"), cur=sumBy(rows,"Replicated Data Size (MB)");
-      const mDay=sumBy(mGrow,"Growth Without LDF Per Day (MB)");
+      const day=sumBy(grow,"Measured Growth Per Day (MB)"), cur=sumBy(rows,"Replica Total Size (MB)");
+      const mDay=sumBy(mGrow,"Growth Without LDF Per Day (MB)"), curData=sumBy(rows,"Replica Data Size (MB)");
       return [
         {label:"Databases Growing", value:fmtInt(grow.length)+" of "+fmtInt(rows.length)},
         {label:"Growth / Day", value:fmtSize(day)},
         {label:"Growth / Year", value:fmtSize(day*365)},
         {label:"Growth / Day without LDF", value:fmtSize(mDay)},
         {label:"Growth / Year without LDF", value:fmtSize(mDay*365)},
-        {label:"Current Size", value:fmtSize(cur)},
-        {label:"Size in 1 Year", value:fmtSize(cur+day*365)},
-        {label:"Net Trend / Day", value:fmtSize(sumBy(rows,"Measured Growth Per Day (MB)"))}
+        {label:"Replica Size Now", value:fmtSize(cur)},
+        {label:"Replica Size in 1 Year", value:fmtSize(cur+day*365)},
+        {label:"Data Size in 1 Year", value:fmtSize(curData+mDay*365)}
       ];
     },
     charts:[
@@ -959,6 +987,9 @@ function buildDbGrowth(){
     const chk=clMap.get(norm(name)), s=act.get(norm(name)), tabs=byDb.get(key)||[];
     const t=trendOf(chk?chk.total:[]), m=trendOf(chk?chk.mdf:[]), l=trendOf(chk?chk.ldf:[]);
     const growing=t.status==="Growing", mGrowing=m.status==="Growing";
+    const repKey=Object.keys(REPLICA_SIZES).find(k=>norm(k)===norm(name));
+    const rep=repKey?REPLICA_SIZES[repKey]:null;
+    const repTotal=rep?rep.total:NaN, repData=rep?rep.data:NaN, repLog=rep?rep.log:NaN;
     const dbMB=n(c["Replicated Data Size (MB)"]);
     const tNew=s?n(s["Total Tables In DB"]):NaN, rNew=s?n(s["Total Row Count"]):NaN;
     const tOld=n(c["Table Count"]), rOld=n(c["Total Rows"]);
@@ -985,10 +1016,13 @@ function buildDbGrowth(){
       "Growth Without LDF Per Day (MB)":isNaN(m.slope)?"":m.slope,
       "Growth Without LDF Per Month (MB)":isNaN(m.slope)?"":m.slope*30,
       "Growth Without LDF Per Year (MB)":isNaN(m.slope)?"":m.slope*365,
-      "Replicated Data Size (MB)":isNaN(dbMB)?"":dbMB,
-      "Est. DB Size in 1 Year (MB)":isNaN(dbMB)?"":dbMB+(growing?t.slope*365:0),
-      "Est. DB Size in 1 Year without LDF (MB)":isNaN(dbMB)?"":dbMB+(mGrowing?m.slope*365:0),
-      "Growth Per Year % of DB":(growing&&dbMB>0)?t.slope*365/dbMB*100:"",
+      "Replica Data Size (MB)":isNaN(repData)?"":repData,
+      "Replica Log Size (MB)":isNaN(repLog)?"":repLog,
+      "Replica Total Size (MB)":isNaN(repTotal)?"":repTotal,
+      "Replica Log Share %":(repTotal>0)?repLog/repTotal*100:"",
+      "Est. Replica Size in 1 Year (MB)":isNaN(repTotal)?"":repTotal+(growing?t.slope*365:0),
+      "Est. Replica Data Size in 1 Year (MB)":isNaN(repData)?"":repData+(mGrowing?m.slope*365:0),
+      "Growth Per Year % of Replica":(growing&&repTotal>0)?t.slope*365/repTotal*100:"",
       "Rows Inserted Per Day":s?total(tabs,"insDay"):"",
       "Rows Updated Per Day":s?total(tabs,"updDay"):"",
       "Tables With Growth Data":tabs.filter(t2=>t2.ok).length,
@@ -1302,8 +1336,8 @@ function buildOverviewTiles(){
   const srvDay=sumBy(srvG,"Measured Growth Per Day (MB)");
   const srvMDay=sumBy(srvM,"Growth Without LDF Per Day (MB)");
   const srvNet=sumBy(srv,"Measured Growth Per Day (MB)");
-  const srvCur=sumBy(srv,"Replicated Data Size (MB)");
-  const srvMdf=sumBy(srv,"Data File Size at Latest (MB)"), srvLdf=sumBy(srv,"Log File Size at Latest (MB)");
+  const srvCur=sumBy(srv,"Replica Total Size (MB)");
+  const srvMdf=sumBy(srv,"Replica Data Size (MB)"), srvLdf=sumBy(srv,"Replica Log Size (MB)");
   const trackedFrom=srv.map(r=>r["Tracked From"]).filter(Boolean).sort();
   const trackedTo=srv.map(r=>r["Tracked To"]).filter(Boolean).sort();
   const period=trackedFrom.length?trackedFrom[0]+" → "+trackedTo[trackedTo.length-1]:"—";
@@ -1373,7 +1407,7 @@ function buildOverviewTiles(){
       {label:"Growth per Day", value:fmtSize(srvDay), hero:true, title:"Trend through the checklist's daily size readings (data + log files), growing databases only"},
       {label:"Growth per Month", value:fmtSize(srvDay*30)},
       {label:"Growth per Year", value:fmtSize(srvDay*365)},
-      {label:"Current Server Size", value:fmtSize(srvCur)},
+      {label:"Replica Size Now", value:fmtSize(srvCur), title:"Data + log files on the replication server today"},
       {label:"Size in 1 Year", value:fmtSize(srvCur+srvDay*365)+share(srvDay*365,srvCur)},
       {label:"Databases Growing", value:fmtInt(srvG.length)+ofSub(srv.length)},
       {label:"Net Trend per Day", value:fmtSize(srvNet), title:"Including shrinking databases, for comparison"},
@@ -1383,9 +1417,9 @@ function buildOverviewTiles(){
       {label:"Growth per Day", value:fmtSize(srvMDay), hero:true, title:"Data files (MDF) only — transaction log growth excluded"},
       {label:"Growth per Month", value:fmtSize(srvMDay*30)},
       {label:"Growth per Year", value:fmtSize(srvMDay*365)},
-      {label:"With LDF per Day", value:fmtSize(srvDay), title:"The figure from the tile alongside, for comparison"},
-      {label:"Data Files Now (MDF)", value:fmtSize(srvMdf)},
-      {label:"Log Files Now (LDF)", value:fmtSize(srvLdf)+share(srvLdf,srvMdf+srvLdf)},
+      {label:"Data Size in 1 Year", value:fmtSize(srvMdf+srvMDay*365)+share(srvMDay*365,srvMdf)},
+      {label:"Data Files Now (MDF)", value:fmtSize(srvMdf), title:"On the replication server today"},
+      {label:"Log Files Now (LDF)", value:fmtSize(srvLdf)+share(srvLdf,srvCur)},
       {label:"Databases Growing", value:fmtInt(srvM.length)+ofSub(srv.length)},
       {label:"Tracked Period", value:escapeHtml(period), title:"MDF/LDF split is recorded from 1 June 2026 onward"}
     ]}
