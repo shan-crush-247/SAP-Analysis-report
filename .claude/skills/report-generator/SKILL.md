@@ -94,6 +94,16 @@ tile and page, which trend each database's readings by least squares. Notes:
 - The file is usually **open in Excel**, which locks it. Copy it to a temp path first and pack
   from the copy, otherwise reading fails with a sharing violation.
 
+### Fourth data file: `replica-size-data.js`
+
+`Report\lib\replica-size-data.js` (`window.EMBEDDED_REPLICA = {name, generated, rows:[{db, data,
+log, total}]}`) holds the replication server's **own** current size per database, from
+`Core File\analysis_2.xlsx` (columns `DatabaseName`, `DataSizeMB`, `LogSizeMB`, `TotalSizeMB`).
+It is the baseline every projection starts from: growth comes from the checklist (which measures
+the *source* databases), and that growth is added to these replica figures. Small enough to ship
+as plain JSON — no gzip. Regenerate by reading sheet1 of that workbook and writing the file
+verbatim; don't retype the numbers by hand.
+
 ### Regenerating `embedded-data.js` after the workbook changes
 
 The embedded data is a snapshot, so it must be rebuilt whenever `Core File\*.xlsx` changes.

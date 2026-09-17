@@ -197,6 +197,7 @@ table.dt tfoot td.num{font-size:12.6px}
 <script src="lib/embedded-data.js"></script>
 <script src="lib/growth-data.js"></script>
 <script src="lib/checklist-data.js"></script>
+<script src="lib/replica-size-data.js"></script>
 <script>
 "use strict";
 
@@ -228,29 +229,15 @@ const DAILY_GROWTH_NOTE =
 +"rewrite existing rows. 'Est. Table Size in 30 Days / 1 Year' = the table's current Total Size (MB) plus that "
 +"growth; index growth is not modelled, so projected sizes are a lower bound.";
 
-/* Current size of each database on the replication server itself, split into data and log
-   files (DBA size query snapshot). Growth trends come from the checklist, which measures the
-   source databases; these are the replica's own figures, so projections start from here. */
-const REPLICA_SIZES = {
-  "BBLIve":               {data:1120926,     log:957666.5,  total:2078592.5},
-  "ATCLive":              {data:1364386.438, log:467.25,    total:1364853.688},
-  "AntsProdLive":         {data:1342069,     log:459.125,   total:1342528.125},
-  "RHLLive":              {data:961162,      log:263.6875,  total:961425.6875},
-  "RRFLive":              {data:569637,      log:40811,     total:610448},
-  "RRLive":               {data:390947,      log:984.375,   total:391931.375},
-  "SCM_MMD_Live":         {data:235848,      log:1667.9375, total:237515.9375},
-  "AKGLIVE":              {data:205309,      log:35.4375,   total:205344.4375},
-  "VTLive":               {data:108827.1875, log:34.875,    total:108862.0625},
-  "VGLive":               {data:57507.0625,  log:655,       total:58162.0625},
-  "TSCLive":              {data:41096,       log:2627.9375, total:43723.9375},
-  "OOPLive":              {data:33672,       log:72,        total:33744},
-  "ATLive":               {data:13192,       log:968,       total:14160},
-  "ENESLive":             {data:5704,        log:776,       total:6480},
-  "SmartDocLive":         {data:5128,        log:387.9375,  total:5515.9375},
-  "WorkFlowEngineLive":   {data:4104,        log:387.9375,  total:4491.9375},
-  "VPMLive":              {data:2888,        log:456,       total:3344},
-  "OOPWorkFlowEngineLive":{data:264,         log:3.882812,  total:267.882812}
-};
+/* Current size of each database on the replication server itself, data and log files split,
+   from Core File\analysis_2.xlsx (packed into lib/replica-size-data.js). Growth trends come
+   from the checklist, which measures the source databases, so projections start from here. */
+function replicaSizeMap(){
+  const m=new Map();
+  const norm=s=>String(s).toLowerCase().replace(/[^a-z0-9]/g,"");
+  ((window.EMBEDDED_REPLICA&&window.EMBEDDED_REPLICA.rows)||[]).forEach(r=>m.set(norm(r.db),r));
+  return m;
+}
 
 const DB_GROWTH_NOTE =
  "Measured from the DBA Daily Checklist ('DB Size' sheet), which records each database's size in MB on working days. "
@@ -259,7 +246,7 @@ const DB_GROWTH_NOTE =
 +"falling trend, typically a restore, shrink or purge rather than real loss of data), Low confidence (too few readings "
 +"or too short a period to trend) and No readings. Server totals count growing databases only, so a one-off "
 +"maintenance shrink cannot cancel out real growth; the Net Trend figure includes every database for comparison. "
-+"Projected size starts from the replication server's own current size, taken from a DBA size query and split into "
++"Projected size starts from the replication server's own current size, taken from analysis_2.xlsx and split into "
 +"data (MDF) and log (LDF) files, with the measured growth added on top. The checklist measures the source databases "
 +"that feed replication, so the trend comes from there while the baseline is the replica itself. "
 +"From 1 June 2026 the checklist records each day's size split into MDF (data files) and LDF (transaction logs); "
@@ -981,14 +968,14 @@ function buildDbGrowth(){
   const byDb=new Map();
   (STATE.growthTables||[]).forEach(t=>{ if(!byDb.has(t.dbKey)) byDb.set(t.dbKey,[]); byDb.get(t.dbKey).push(t); });
   const total=(list,f)=>list.reduce((a,t)=>a+t[f],0);
+  const repMap=replicaSizeMap();
   const dayStr=serial=>new Date(Math.round((serial-25569)*86400000)).toISOString().slice(0,10);
   return (STATE.data.databases?STATE.data.databases.rows:[]).map(c=>{
     const name=String(c["Database Name"]).trim(), key=name.toUpperCase();
     const chk=clMap.get(norm(name)), s=act.get(norm(name)), tabs=byDb.get(key)||[];
     const t=trendOf(chk?chk.total:[]), m=trendOf(chk?chk.mdf:[]), l=trendOf(chk?chk.ldf:[]);
     const growing=t.status==="Growing", mGrowing=m.status==="Growing";
-    const repKey=Object.keys(REPLICA_SIZES).find(k=>norm(k)===norm(name));
-    const rep=repKey?REPLICA_SIZES[repKey]:null;
+    const rep=repMap.get(norm(name))||null;
     const repTotal=rep?rep.total:NaN, repData=rep?rep.data:NaN, repLog=rep?rep.log:NaN;
     const dbMB=n(c["Replicated Data Size (MB)"]);
     const tNew=s?n(s["Total Tables In DB"]):NaN, rNew=s?n(s["Total Row Count"]):NaN;

@@ -1,0 +1,20 @@
+window.EMBEDDED_REPLICA = {name:"analysis_2.xlsx", generated:"2026-09-17 16:57", rows:[
+  {db:"BBLIve",data:1120926,log:957666.5,total:2078592.5},
+  {db:"ATCLive",data:1364386.4375,log:467.25,total:1364853.6875},
+  {db:"AntsProdLive",data:1342069,log:459.125,total:1342528.125},
+  {db:"RHLLive",data:961162,log:263.6875,total:961425.6875},
+  {db:"RRFLive",data:569637,log:40811,total:610448},
+  {db:"RRLive",data:390947,log:984.375,total:391931.375},
+  {db:"SCM_MMD_Live",data:235848,log:1667.9375,total:237515.9375},
+  {db:"AKGLIVE",data:205309,log:35.4375,total:205344.4375},
+  {db:"VTLive",data:108827.1875,log:34.875,total:108862.0625},
+  {db:"VGLive",data:57507.0625,log:655,total:58162.0625},
+  {db:"TSCLive",data:41096,log:2627.9375,total:43723.9375},
+  {db:"OOPLive",data:33672,log:72,total:33744},
+  {db:"ATLive",data:13192,log:968,total:14160},
+  {db:"ENESLive",data:5704,log:776,total:6480},
+  {db:"SmartDocLive",data:5128,log:387.9375,total:5515.9375},
+  {db:"WorkFlowEngineLive",data:4104,log:387.9375,total:4491.9375},
+  {db:"VPMLive",data:2888,log:456,total:3344},
+  {db:"OOPWorkFlowEngineLive",data:264,log:3.8828119999999999,total:267.882812}
+]};
