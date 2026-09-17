@@ -710,9 +710,7 @@ const TILE_GRADS = {
   rows:    "linear-gradient(135deg,#3f7d3a,#7aa332)",
   sps:     "linear-gradient(135deg,#b45309,#e08a2e)",
   growth:  "linear-gradient(135deg,#a1265c,#d4517e)",
-  tstore:  "linear-gradient(135deg,#34478a,#5b7fcf)",
-  server:  "linear-gradient(135deg,#0f5e6e,#2f8f7f 55%,#6a9f45)",
-  nolog:   "linear-gradient(135deg,#6b4f9e,#a35fa0 60%,#c98a4b)"
+  tstore:  "linear-gradient(135deg,#34478a,#5b7fcf)"
 };
 
 const STATE = {
@@ -1317,18 +1315,6 @@ function buildOverviewTiles(){
   const fastest=dg.filter(r=>r["Est. Table Growth Per Day (MB)"]!=="")
     .sort((a,b)=>b["Est. Table Growth Per Day (MB)"]-a["Est. Table Growth Per Day (MB)"])[0];
 
-  const srv=rowsOf("dbGrowth");
-  const srvG=srv.filter(r=>r["Checklist Status"]==="Growing");
-  const srvM=srv.filter(r=>r["Data File Status"]==="Growing");
-  const srvDay=sumBy(srvG,"Measured Growth Per Day (MB)");
-  const srvMDay=sumBy(srvM,"Growth Without LDF Per Day (MB)");
-  const srvNet=sumBy(srv,"Measured Growth Per Day (MB)");
-  const srvCur=sumBy(srv,"Replica Total Size (MB)");
-  const srvMdf=sumBy(srv,"Replica Data Size (MB)"), srvLdf=sumBy(srv,"Replica Log Size (MB)");
-  const trackedFrom=srv.map(r=>r["Tracked From"]).filter(Boolean).sort();
-  const trackedTo=srv.map(r=>r["Tracked To"]).filter(Boolean).sort();
-  const period=trackedFrom.length?trackedFrom[0]+" → "+trackedTo[trackedTo.length-1]:"—";
-  const ofSub=b=>'<span class="sub">of '+fmtInt(b)+'</span>';
 
   return [
     {title:"Replication's Storage Details", icon:"💽", grad:TILE_GRADS.storage, items:[
@@ -1389,26 +1375,6 @@ function buildOverviewTiles(){
       {label:"Est. Size in 1 Year", value:fmtSize(curCovered+growDay*365)+share(growDay*365,curCovered)},
       {label:"Fastest-Growing Table", value:fastest?escapeHtml(fastest["Table Name"])+'<span class="sub">('+fmtSize(fastest["Est. Table Growth Per Day (MB)"])+'/day)</span>':"—",
         title:fastest?fastest["Database Name"]+" · "+fastest["Table Name"]:""}
-    ]},
-    {title:"Growth of Replication Server", icon:"🌐", grad:TILE_GRADS.server, items:[
-      {label:"Growth per Day", value:fmtSize(srvDay), hero:true, title:"Trend through the checklist's daily size readings (data + log files), growing databases only"},
-      {label:"Growth per Month", value:fmtSize(srvDay*30)},
-      {label:"Growth per Year", value:fmtSize(srvDay*365)},
-      {label:"Replica Size Now", value:fmtSize(srvCur), title:"Data + log files on the replication server today"},
-      {label:"Size in 1 Year", value:fmtSize(srvCur+srvDay*365)+share(srvDay*365,srvCur)},
-      {label:"Databases Growing", value:fmtInt(srvG.length)+ofSub(srv.length)},
-      {label:"Net Trend per Day", value:fmtSize(srvNet), title:"Including shrinking databases, for comparison"},
-      {label:"Tracked Period", value:escapeHtml(period), title:"Working-day readings from the DBA Daily Checklist"}
-    ]},
-    {title:"Growth of Replication without LDF", icon:"🗃️", grad:TILE_GRADS.nolog, items:[
-      {label:"Growth per Day", value:fmtSize(srvMDay), hero:true, title:"Data files (MDF) only — transaction log growth excluded"},
-      {label:"Growth per Month", value:fmtSize(srvMDay*30)},
-      {label:"Growth per Year", value:fmtSize(srvMDay*365)},
-      {label:"Data Size in 1 Year", value:fmtSize(srvMdf+srvMDay*365)+share(srvMDay*365,srvMdf)},
-      {label:"Data Files Now (MDF)", value:fmtSize(srvMdf), title:"On the replication server today"},
-      {label:"Log Files Now (LDF)", value:fmtSize(srvLdf)+share(srvLdf,srvCur)},
-      {label:"Databases Growing", value:fmtInt(srvM.length)+ofSub(srv.length)},
-      {label:"Tracked Period", value:escapeHtml(period), title:"MDF/LDF split is recorded from 1 June 2026 onward"}
     ]}
   ];
 }
