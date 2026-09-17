@@ -100,7 +100,12 @@ tile and page, which trend each database's readings by least squares. Notes:
 log, total}]}`) holds the replication server's **own** current size per database, from
 `Core File\analysis_2.xlsx` (columns `DatabaseName`, `DataSizeMB`, `LogSizeMB`, `TotalSizeMB`).
 It is the baseline every projection starts from: growth comes from the checklist (which measures
-the *source* databases), and that growth is added to these replica figures. Small enough to ship
+the *source* databases), and that growth is added to these replica figures. `applyReplicaScaling()`
+also rescales **every** size in the report at load — the databases, tables, unused and insights
+sheets — by each database's real-to-catalogue ratio, so all pages, charts and exports sit on the
+replica's actual footprint. The ratio compares analysis_2's data-file size against the catalogue's
+**data + index** (indexes live inside the data files); comparing against data alone overstates it.
+Log sizes and replica totals exist only in analysis_2 and are attached to the databases rows. Small enough to ship
 as plain JSON — no gzip. Regenerate by reading sheet1 of that workbook and writing the file
 verbatim; don't retype the numbers by hand.
 

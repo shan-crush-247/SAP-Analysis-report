@@ -60,7 +60,8 @@ method is spelled out in the Methodology panel on that page.
 | `Report/` | The generated dashboard — open `SAP_Replication_Analysis_Report.html` |
 | `Report/lib/embedded-data.js` | The analysed data, pre-parsed and gzipped (~2.3 MB); this is what auto-loads |
 | `Report/lib/growth-data.js` | The all-tables growth scan, pre-parsed and gzipped (~100 KB); supplies row-activity figures |
-| `Report/lib/checklist-data.js` | Daily database size readings from the DBA checklist (~7 KB); drives the Replication Server growth tile and page |
+| `Report/lib/checklist-data.js` | Daily database size readings from the DBA checklist (~18 KB); drives the Replication Server growth tile and page |
+| `Report/lib/replica-size-data.js` | The replica's own size per database from `analysis_2.xlsx` (~1 KB); every size in the report is rescaled to this footprint |
 | `Report/lib/*.min.js` | SheetJS and Chart.js, vendored so the report works offline |
 | `Reference Report/` | An unrelated SCM dashboard, kept only as a design reference |
 | `.claude/skills/report-generator/` | Skill used to regenerate or extend the report |

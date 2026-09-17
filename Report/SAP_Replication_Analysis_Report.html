@@ -76,9 +76,6 @@ button{font-family:inherit}
 .trow.hero .tl{font-size:11.2px;text-transform:uppercase;letter-spacing:.4px}
 .trow.hero .tv{font-size:21px;background:var(--tile-grad);-webkit-background-clip:text;background-clip:text;color:transparent}
 .trow .tv .sub{font-size:11px;font-weight:700;color:var(--ink2);margin-left:5px}
-.tile-foot{margin-top:9px;padding-top:9px;border-top:1px dashed var(--line);display:flex;flex-direction:column;gap:3px}
-.tile-foot .spark{width:100%;height:30px;display:block;opacity:.95}
-.tile-foot .foot-cap{font-size:10.2px;color:var(--ink2);font-weight:600;letter-spacing:.2px}
 .kpis{display:grid;grid-template-columns:repeat(auto-fit,minmax(152px,1fr));gap:9px}
 .kpi{background:var(--panel);border:1px solid var(--line);border-radius:11px;padding:10px 12px;box-shadow:var(--shadow);position:relative;overflow:hidden;transition:.18s}
 .kpi:hover{transform:translateY(-2px);box-shadow:var(--shadow-lg)}
@@ -296,6 +293,8 @@ const SHEET_CONFIGS = {
       {key:"Data Size (MB)", type:"size"},
       {key:"Index Size (MB)", type:"size"},
       {key:"Replicated Data Size (MB)", type:"size"},
+      {key:"Log File Size (MB)", type:"size"},
+      {key:"Replica Total Size (MB)", type:"size"},
       {key:"BI Used Tables", type:"int"},
       {key:"BI Unused Tables", type:"int"},
       {key:"Table Usage %", type:"pct"},
@@ -731,16 +730,15 @@ const TILE_GROUPS = {
   "Table Details":"Replication Estate",
   "Column Details":"Replication Estate",
   "Row Volume":"Replication Estate",
-  "Growth of Replication Server":"Replication Growth",
-  "Growth of Replication server without LDF":"Replication Growth",
-  "Daily Growth of BI Reports":"BI Reports",
-  "Table Storage of BI Reports":"BI Reports"
+  "Growth of Replication Server":"Replication Growth & BI Reports",
+  "Growth of Replication server without LDF":"Replication Growth & BI Reports",
+  "Daily Growth of BI Reports":"Replication Growth & BI Reports",
+  "Table Storage of BI Reports":"Replication Growth & BI Reports"
 };
-const GROUP_ORDER = ["Replication Estate","Replication Growth","BI Reports"];
+const GROUP_ORDER = ["Replication Estate","Replication Growth & BI Reports"];
 const GROUP_GRADS = {
   "Replication Estate":"linear-gradient(135deg,#0f766e,#3fa08a)",
-  "Replication Growth":"linear-gradient(135deg,#0f5e6e,#2f8f7f 55%,#6a9f45)",
-  "BI Reports":"linear-gradient(135deg,#a1265c,#d4517e)"
+  "Replication Growth & BI Reports":"linear-gradient(135deg,#0f5e6e,#2f8f7f 45%,#a1265c)"
 };
 
 const STATE = {
@@ -898,18 +896,38 @@ function loadWorkbook(arrayBuffer,fileName){
 /* analysis_2.xlsx reports what each database actually occupies on the replica; the
    catalogue's per-table sizes add up to less, so table-derived sizes are scaled by the
    database's real-to-catalogue ratio and land on the same footing as the storage figures. */
-function replicaScaleMap(){
+function applyReplicaScaling(){
   const norm=s=>String(s).toLowerCase().replace(/[^a-z0-9]/g,"");
-  const rep=replicaSizeMap(), m=new Map();
+  const rep=replicaSizeMap();
+  const f=new Map();
   (STATE.data.databases?STATE.data.databases.rows:[]).forEach(r=>{
     const name=String(r["Database Name"]||"").trim();
-    const cd=toNum(r["Data Size (MB)"]), a=rep.get(norm(name));
-    m.set(name.toUpperCase(), (a&&cd>0&&a.data>0)?a.data/cd:1);
+    const a=rep.get(norm(name));
+    /* Indexes live inside the data files, so the catalogue side of the ratio is data + index. */
+    const cd=(toNum(r["Data Size (MB)"])||0)+(toNum(r["Index Size (MB)"])||0);
+    f.set(name.toUpperCase(), (a&&cd>0&&a.data>0)?a.data/cd:1);
   });
-  return m;
+  STATE.replicaFactors=f;
+  const scale=(rows,dbKey,cols)=>{
+    (rows||[]).forEach(r=>{
+      const m=f.get(String(r[dbKey]||"").trim().toUpperCase());
+      if(!m||m===1) return;
+      cols.forEach(c=>{ const v=toNum(r[c]); if(!isNaN(v)) r[c]=v*m; });
+    });
+  };
+  const d=STATE.data;
+  scale(d.databases&&d.databases.rows,"Database Name",["Data Size (MB)","Index Size (MB)","Replicated Data Size (MB)"]);
+  scale(d.tables&&d.tables.rows,"Database Name",["Data Size (MB)","Index Size (MB)","Total Size (MB)"]);
+  scale(d.unused&&d.unused.rows,"DatabaseName",["TotalSizeMB"]);
+  scale(d.insights&&d.insights.rows,"DatabaseName",["DataSizeMB","IndexSizeMB","TotalSizeMB"]);
+  /* Log files and the replica's own totals exist only in analysis_2. */
+  (d.databases?d.databases.rows:[]).forEach(r=>{
+    const a=rep.get(norm(String(r["Database Name"]||"").trim()));
+    r["Log File Size (MB)"]=a?a.log:"";
+    r["Replica Total Size (MB)"]=a?a.total:"";
+  });
 }
 function buildDailyGrowth(){
-  const scale=replicaScaleMap();
   const cat=new Map();
   (STATE.data.tables?STATE.data.tables.rows:[]).forEach(r=>{
     const db=String(r["Database Name"]||"").trim().toUpperCase();
@@ -922,10 +940,9 @@ function buildDailyGrowth(){
     const rawName=String(r["Table Name"]||"").trim();
     const bare=rawName.split(".").pop().toLowerCase();
     const t=cat.get(db.toUpperCase()+"|"+bare);
-    const f=scale.get(db.toUpperCase())||1;
     const cols=t?toNum(t["Available Columns (SAP)"]):NaN;
     const rowCount=t?toNum(t["Row Count"]):NaN;
-    const dataMB=(t?toNum(t["Data Size (MB)"]):NaN)*f;
+    const dataMB=t?toNum(t["Data Size (MB)"]):NaN;
     const ins=toNum(r["Avg Inserts Per Day (approx)"]);
     const upd=toNum(r["Avg Updates Per Day (approx)"]);
     const mbPerRow=(!isNaN(dataMB)&&!isNaN(rowCount)&&rowCount>0)?dataMB/rowCount:NaN;
@@ -934,7 +951,7 @@ function buildDailyGrowth(){
     const totMB=(isNaN(insMB)&&isNaN(updMB))?NaN:((isNaN(insMB)?0:insMB)+(isNaN(updMB)?0:updMB));
     /* Column-based sizing: cells inserted per day × this table's average bytes per cell.
        Only inserts grow a table (updates rewrite rows in place), so projections use inserts. */
-    const curMB=(t?toNum(t["Total Size (MB)"]):NaN)*f;
+    const curMB=t?toNum(t["Total Size (MB)"]):NaN;
     const cellsDay=(!isNaN(cols)&&!isNaN(ins))?cols*ins:NaN;
     const cellMB=(!isNaN(dataMB)&&!isNaN(rowCount)&&!isNaN(cols)&&rowCount>0&&cols>0)?dataMB/(rowCount*cols):NaN;
     const growMB=(!isNaN(cellsDay)&&!isNaN(cellMB))?cellsDay*cellMB:NaN;
@@ -1087,6 +1104,7 @@ function freshSectionState(id){
   return {search:"", colSel:{}, colText:{}, sort:Object.assign({},SHEET_CONFIGS[id].defaultSort), page:1, pageSize:50};
 }
 function finalizeData(fileName,generated){
+  applyReplicaScaling();
   STATE.data.dailyGrowth={rows:buildDailyGrowth(),note:DAILY_GROWTH_NOTE};
   STATE.growthTables=buildGrowthTables();
   STATE.data.dbGrowth={rows:buildDbGrowth(),
@@ -1330,28 +1348,6 @@ function navigate(navId){
 /* Each tile answers one subject: databases, tables, columns, storage, rows, procedures,
    growth. Figures are computed from the detail sheets so they stay consistent with the
    tables below; the summary sheet supplies the few values it alone carries. */
-/* Server-wide size per reading day, for the tile sparklines. Days where fewer than ten
-   databases were recorded are dropped, so a light reporting day can't look like a cliff. */
-function checklistServerSeries(field){
-  const cl=STATE.checklist;
-  if(!cl) return [];
-  const byDate=new Map();
-  cl.dbs.forEach(d=>(d[field]||[]).forEach(([s,v])=>{
-    if(!byDate.has(s)) byDate.set(s,{sum:0,n:0});
-    const e=byDate.get(s); e.sum+=v; e.n++;
-  }));
-  return [...byDate.entries()].filter(e=>e[1].n>=10).sort((a,b)=>a[0]-b[0]).map(e=>[e[0],e[1].sum]);
-}
-function sparkline(series,color){
-  if(!series||series.length<2) return "";
-  const xs=series.map(p=>p[0]), ys=series.map(p=>p[1]);
-  const x0=Math.min.apply(null,xs), x1=Math.max.apply(null,xs);
-  const y0=Math.min.apply(null,ys), y1=Math.max.apply(null,ys);
-  const dx=(x1-x0)||1, dy=(y1-y0)||1;
-  const pts=series.map(p=>((p[0]-x0)/dx*100).toFixed(2)+","+(28-((p[1]-y0)/dy)*24).toFixed(2)).join(" ");
-  return '<svg class="spark" viewBox="0 0 100 30" preserveAspectRatio="none">'
-    +'<polyline points="'+pts+'" fill="none" stroke="'+color+'" stroke-width="1.7" vector-effect="non-scaling-stroke" stroke-linejoin="round"/></svg>';
-}
 function buildOverviewTiles(){
   const ov=STATE.overview||{};
   const all=[...(ov.kpiA||[]),...(ov.kpiB||[])];
@@ -1379,8 +1375,6 @@ function buildOverviewTiles(){
   const growDay=sumBy(dg,"Est. Table Growth Per Day (MB)");
   const cellsDay=sumBy(dg,"Cells Inserted Per Day");
   const curCovered=sumBy(dg,"Current Table Size (MB)");
-  const fastest=dg.filter(r=>r["Est. Table Growth Per Day (MB)"]!=="")
-    .sort((a,b)=>b["Est. Table Growth Per Day (MB)"]-a["Est. Table Growth Per Day (MB)"])[0];
 
   const repRows=(window.EMBEDDED_REPLICA&&window.EMBEDDED_REPLICA.rows)||[];
   const repTotalMB=repRows.reduce((a,r)=>a+r.total,0);
@@ -1398,8 +1392,6 @@ function buildOverviewTiles(){
   const srvMDay=sumBy(srvMg,"Growth Without LDF Per Day (MB)");
   const srvNet=sumBy(srv,"Measured Growth Per Day (MB)");
   const ofSub=b=>'<span class="sub">of '+fmtInt(b)+'</span>';
-  const sparkTotal=sparkline(checklistServerSeries("total"),"#2f8f7f");
-  const sparkMdf=sparkline(checklistServerSeries("mdf"),"#a35fa0");
 
 
   return [
@@ -1408,8 +1400,6 @@ function buildOverviewTiles(){
       {label:"Data Files (MDF)", value:fmtSize(repDataMB)+share(repDataMB,repTotalMB)},
       {label:"Log Files (LDF)", value:fmtSize(repLogMB)+share(repLogMB,repTotalMB)},
       {label:"Databases", value:fmtInt(repCount)},
-      {label:"Largest Database", value:repBiggest?escapeHtml(repBiggest.db)+'<span class="sub">'+fmtSize(repBiggest.total)+'</span>':"—"},
-      {label:"Largest Log File", value:repBigLog?escapeHtml(repBigLog.db)+'<span class="sub">'+fmtSize(repBigLog.log)+'</span>':"—"},
       {label:"BI Used Storage", value:kv("BI Used Storage")||"—", title:"From the analysis workbook"},
       {label:"Held by Unused Tables", value:fmtSize(unusedMB)+share(unusedMB,repMB), title:"From the analysis workbook, on its own catalogue basis ("+fmtSize(repMB)+" replicated)"}
     ]},
@@ -1418,7 +1408,9 @@ function buildOverviewTiles(){
       {label:"Views", value:fmtInt(sumBy(db,"View Count"))},
       {label:"Procedures", value:fmtInt(sumBy(db,"Proc Count"))},
       {label:"Indexes", value:fmtInt(sumBy(db,"Index Count"))},
-      {label:"SP Dependencies on SAP DBs", value:fmtInt(sumBy(db,"SPs Depending on This DB"))}
+      {label:"SP Dependencies on SAP DBs", value:fmtInt(sumBy(db,"SPs Depending on This DB"))},
+      {label:"Largest Database", value:repBiggest?escapeHtml(repBiggest.db)+'<span class="sub">'+fmtSize(repBiggest.total)+'</span>':"—"},
+      {label:"Largest Log File", value:repBigLog?escapeHtml(repBigLog.db)+'<span class="sub">'+fmtSize(repBigLog.log)+'</span>':"—"}
     ]},
     {title:"Stored Procedure Details", icon:"⚙️", grad:TILE_GRADS.sps, items:[
       {label:"Stored Procedures", value:fmtInt(sp.length), hero:true},
@@ -1460,12 +1452,9 @@ function buildOverviewTiles(){
       {label:"Avg Size per Cell", value:fmtSize(cellsDay?growDay/cellsDay:NaN), title:"Each table's data size ÷ (rows × columns), weighted by cells inserted"},
       {label:"Current Size (these tables)", value:fmtSize(curCovered)},
       {label:"Est. Size in 30 Days", value:fmtSize(curCovered+growDay*30)+share(growDay*30,curCovered)},
-      {label:"Est. Size in 1 Year", value:fmtSize(curCovered+growDay*365)+share(growDay*365,curCovered)},
-      {label:"Fastest-Growing Table", value:fastest?escapeHtml(fastest["Table Name"])+'<span class="sub">('+fmtSize(fastest["Est. Table Growth Per Day (MB)"])+'/day)</span>':"—",
-        title:fastest?fastest["Database Name"]+" · "+fastest["Table Name"]:""}
+      {label:"Est. Size in 1 Year", value:fmtSize(curCovered+growDay*365)+share(growDay*365,curCovered)}
     ]},
-    {title:"Growth of Replication Server", icon:"🌐", grad:TILE_GRADS.server,
-     foot:sparkTotal?'<div class="tile-foot">'+sparkTotal+'</div>':"", items:[
+    {title:"Growth of Replication Server", icon:"🌐", grad:TILE_GRADS.server, items:[
       {label:"Growth per Day", value:fmtSize(srvDay), hero:true, title:"Trend through the checklist's daily size readings (data + log), growing databases only"},
       {label:"Growth per Month", value:fmtSize(srvDay*30)},
       {label:"Growth per Year", value:fmtSize(srvDay*365)},
@@ -1474,8 +1463,7 @@ function buildOverviewTiles(){
       {label:"Databases Growing", value:fmtInt(srvG.length)+ofSub(srv.length)},
       {label:"Net Trend per Day", value:fmtSize(srvNet), title:"Including shrinking databases"}
     ]},
-    {title:"Growth of Replication server without LDF", icon:"🗃️", grad:TILE_GRADS.nolog,
-     foot:sparkMdf?'<div class="tile-foot">'+sparkMdf+'<span class="foot-cap">Data files, from 1 Jun 2026</span></div>':"", items:[
+    {title:"Growth of Replication server without LDF", icon:"🗃️", grad:TILE_GRADS.nolog, items:[
       {label:"Growth per Day", value:fmtSize(srvMDay), hero:true, title:"Data files (MDF) only — transaction log growth excluded"},
       {label:"Growth per Month", value:fmtSize(srvMDay*30)},
       {label:"Growth per Year", value:fmtSize(srvMDay*365)},
@@ -1511,7 +1499,7 @@ function renderOverviewBlocks(root){
   });
   let html='<div style="display:flex;flex-direction:column;gap:14px">'
     + groups.map(g=>{
-        const compact=(g.title==="Replication Growth"||g.title==="BI Reports")?" compact":"";
+        const compact=(g.title==="Replication Growth & BI Reports")?" compact":"";
         return '<div><div class="groupbar" style="background:'+(GROUP_GRADS[g.title]||TILE_GRADS.db)+'">'+escapeHtml(g.title)+'</div>'
           + '<div class="tiles'+compact+'" style="margin-top:8px">'+g.tiles.map(renderTile).join("")+'</div></div>';
       }).join("");
@@ -1522,7 +1510,10 @@ function renderOverviewBlocks(root){
     + '</div></div></div>';
   root.innerHTML=html;
 
-  const stor=(ov.dbStorage||[]).slice().sort((a,b)=>b.gb-a.gb);
+  const repChart=(window.EMBEDDED_REPLICA&&window.EMBEDDED_REPLICA.rows)||[];
+  const stor=repChart.length
+    ? repChart.slice().sort((a,b)=>b.total-a.total).map(r=>({db:r.db, gb:+(r.total/1024).toFixed(2)}))
+    : (ov.dbStorage||[]).slice().sort((a,b)=>b.gb-a.gb);
   makeChart("ovStorage",barSpec(stor.map(s=>s.db),stor.map(s=>s.gb),"Storage (GB)"),OVERVIEW_CHARTS);
   makeChart("ovStatus",donutSpec((ov.status||[]).map(s=>s.label),(ov.status||[]).map(s=>s.value)),OVERVIEW_CHARTS);
   makeChart("ovLevel",donutSpec((ov.usageLevel||[]).map(s=>s.label),(ov.usageLevel||[]).map(s=>s.value)),OVERVIEW_CHARTS);
