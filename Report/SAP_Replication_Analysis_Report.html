@@ -73,6 +73,9 @@ button{font-family:inherit}
 .trow.hero .tl{font-size:11.2px;text-transform:uppercase;letter-spacing:.4px}
 .trow.hero .tv{font-size:21px;background:var(--tile-grad);-webkit-background-clip:text;background-clip:text;color:transparent}
 .trow .tv .sub{font-size:11px;font-weight:700;color:var(--ink2);margin-left:5px}
+.tile-foot{margin-top:9px;padding-top:9px;border-top:1px dashed var(--line);display:flex;flex-direction:column;gap:3px}
+.tile-foot .spark{width:100%;height:30px;display:block;opacity:.95}
+.tile-foot .foot-cap{font-size:10.2px;color:var(--ink2);font-weight:600;letter-spacing:.2px}
 .kpis{display:grid;grid-template-columns:repeat(auto-fit,minmax(152px,1fr));gap:9px}
 .kpi{background:var(--panel);border:1px solid var(--line);border-radius:11px;padding:10px 12px;box-shadow:var(--shadow);position:relative;overflow:hidden;transition:.18s}
 .kpi:hover{transform:translateY(-2px);box-shadow:var(--shadow-lg)}
@@ -224,6 +227,9 @@ const DAILY_GROWTH_NOTE =
 +"column count × its average inserted rows per day. Coverage is limited to the tables that were sampled "
 +"for insertion activity and that also carry catalogue size figures — it is a representative lower bound "
 +"for daily growth, not a whole-server total. Tables with no measurable insertion data contribute nothing. "
++"Sizes are scaled to the replica's actual footprint: analysis_2.xlsx gives each database's real data-file size, and "
++"every table-derived size here is multiplied by that database's real-to-catalogue ratio, so these figures agree with "
++"the storage tile rather than with the catalogue's smaller numbers. "
 +"Table size columns: 'Avg Cell Size' = Data Size (MB) ÷ (Row Count × column count); 'Est. Table Growth Per Day' = "
 +"column count × avg inserted rows per day × avg cell size. Only inserts are counted as growth, because updates "
 +"rewrite existing rows. 'Est. Table Size in 30 Days / 1 Year' = the table's current Total Size (MB) plus that "
@@ -710,7 +716,28 @@ const TILE_GRADS = {
   rows:    "linear-gradient(135deg,#3f7d3a,#7aa332)",
   sps:     "linear-gradient(135deg,#b45309,#e08a2e)",
   growth:  "linear-gradient(135deg,#a1265c,#d4517e)",
-  tstore:  "linear-gradient(135deg,#34478a,#5b7fcf)"
+  tstore:  "linear-gradient(135deg,#34478a,#5b7fcf)",
+  server:  "linear-gradient(135deg,#0f5e6e,#2f8f7f 55%,#6a9f45)",
+  nolog:   "linear-gradient(135deg,#6b4f9e,#a35fa0 60%,#c98a4b)"
+};
+/* Overview tiles are grouped into sections. */
+const TILE_GROUPS = {
+  "Replication's Storage Details":"Replication Estate",
+  "Database Details":"Replication Estate",
+  "Stored Procedure Details":"Replication Estate",
+  "Table Details":"Replication Estate",
+  "Column Details":"Replication Estate",
+  "Row Volume":"Replication Estate",
+  "Growth of Replication Server":"Replication Growth",
+  "Growth of Replication server without LDF":"Replication Growth",
+  "Daily Growth of BI Reports":"BI Reports",
+  "Table Storage of BI Reports":"BI Reports"
+};
+const GROUP_ORDER = ["Replication Estate","Replication Growth","BI Reports"];
+const GROUP_GRADS = {
+  "Replication Estate":"linear-gradient(135deg,#0f766e,#3fa08a)",
+  "Replication Growth":"linear-gradient(135deg,#0f5e6e,#2f8f7f 55%,#6a9f45)",
+  "BI Reports":"linear-gradient(135deg,#a1265c,#d4517e)"
 };
 
 const STATE = {
@@ -865,7 +892,21 @@ function loadWorkbook(arrayBuffer,fileName){
 /* ------------------------------ derived data ------------------------------ */
 /* Daily growth: the workbook gives rows-per-day per table but no byte figure, so the
    average row size comes from that table's own catalogue entry (data size ÷ row count). */
+/* analysis_2.xlsx reports what each database actually occupies on the replica; the
+   catalogue's per-table sizes add up to less, so table-derived sizes are scaled by the
+   database's real-to-catalogue ratio and land on the same footing as the storage figures. */
+function replicaScaleMap(){
+  const norm=s=>String(s).toLowerCase().replace(/[^a-z0-9]/g,"");
+  const rep=replicaSizeMap(), m=new Map();
+  (STATE.data.databases?STATE.data.databases.rows:[]).forEach(r=>{
+    const name=String(r["Database Name"]||"").trim();
+    const cd=toNum(r["Data Size (MB)"]), a=rep.get(norm(name));
+    m.set(name.toUpperCase(), (a&&cd>0&&a.data>0)?a.data/cd:1);
+  });
+  return m;
+}
 function buildDailyGrowth(){
+  const scale=replicaScaleMap();
   const cat=new Map();
   (STATE.data.tables?STATE.data.tables.rows:[]).forEach(r=>{
     const db=String(r["Database Name"]||"").trim().toUpperCase();
@@ -878,9 +919,10 @@ function buildDailyGrowth(){
     const rawName=String(r["Table Name"]||"").trim();
     const bare=rawName.split(".").pop().toLowerCase();
     const t=cat.get(db.toUpperCase()+"|"+bare);
+    const f=scale.get(db.toUpperCase())||1;
     const cols=t?toNum(t["Available Columns (SAP)"]):NaN;
     const rowCount=t?toNum(t["Row Count"]):NaN;
-    const dataMB=t?toNum(t["Data Size (MB)"]):NaN;
+    const dataMB=(t?toNum(t["Data Size (MB)"]):NaN)*f;
     const ins=toNum(r["Avg Inserts Per Day (approx)"]);
     const upd=toNum(r["Avg Updates Per Day (approx)"]);
     const mbPerRow=(!isNaN(dataMB)&&!isNaN(rowCount)&&rowCount>0)?dataMB/rowCount:NaN;
@@ -889,7 +931,7 @@ function buildDailyGrowth(){
     const totMB=(isNaN(insMB)&&isNaN(updMB))?NaN:((isNaN(insMB)?0:insMB)+(isNaN(updMB)?0:updMB));
     /* Column-based sizing: cells inserted per day × this table's average bytes per cell.
        Only inserts grow a table (updates rewrite rows in place), so projections use inserts. */
-    const curMB=t?toNum(t["Total Size (MB)"]):NaN;
+    const curMB=(t?toNum(t["Total Size (MB)"]):NaN)*f;
     const cellsDay=(!isNaN(cols)&&!isNaN(ins))?cols*ins:NaN;
     const cellMB=(!isNaN(dataMB)&&!isNaN(rowCount)&&!isNaN(cols)&&rowCount>0&&cols>0)?dataMB/(rowCount*cols):NaN;
     const growMB=(!isNaN(cellsDay)&&!isNaN(cellMB))?cellsDay*cellMB:NaN;
@@ -1285,6 +1327,28 @@ function navigate(navId){
 /* Each tile answers one subject: databases, tables, columns, storage, rows, procedures,
    growth. Figures are computed from the detail sheets so they stay consistent with the
    tables below; the summary sheet supplies the few values it alone carries. */
+/* Server-wide size per reading day, for the tile sparklines. Days where fewer than ten
+   databases were recorded are dropped, so a light reporting day can't look like a cliff. */
+function checklistServerSeries(field){
+  const cl=STATE.checklist;
+  if(!cl) return [];
+  const byDate=new Map();
+  cl.dbs.forEach(d=>(d[field]||[]).forEach(([s,v])=>{
+    if(!byDate.has(s)) byDate.set(s,{sum:0,n:0});
+    const e=byDate.get(s); e.sum+=v; e.n++;
+  }));
+  return [...byDate.entries()].filter(e=>e[1].n>=10).sort((a,b)=>a[0]-b[0]).map(e=>[e[0],e[1].sum]);
+}
+function sparkline(series,color){
+  if(!series||series.length<2) return "";
+  const xs=series.map(p=>p[0]), ys=series.map(p=>p[1]);
+  const x0=Math.min.apply(null,xs), x1=Math.max.apply(null,xs);
+  const y0=Math.min.apply(null,ys), y1=Math.max.apply(null,ys);
+  const dx=(x1-x0)||1, dy=(y1-y0)||1;
+  const pts=series.map(p=>((p[0]-x0)/dx*100).toFixed(2)+","+(28-((p[1]-y0)/dy)*24).toFixed(2)).join(" ");
+  return '<svg class="spark" viewBox="0 0 100 30" preserveAspectRatio="none">'
+    +'<polyline points="'+pts+'" fill="none" stroke="'+color+'" stroke-width="1.7" vector-effect="non-scaling-stroke" stroke-linejoin="round"/></svg>';
+}
 function buildOverviewTiles(){
   const ov=STATE.overview||{};
   const all=[...(ov.kpiA||[]),...(ov.kpiB||[])];
@@ -1315,15 +1379,39 @@ function buildOverviewTiles(){
   const fastest=dg.filter(r=>r["Est. Table Growth Per Day (MB)"]!=="")
     .sort((a,b)=>b["Est. Table Growth Per Day (MB)"]-a["Est. Table Growth Per Day (MB)"])[0];
 
+  const repRows=(window.EMBEDDED_REPLICA&&window.EMBEDDED_REPLICA.rows)||[];
+  const repTotalMB=repRows.reduce((a,r)=>a+r.total,0);
+  const repDataMB=repRows.reduce((a,r)=>a+r.data,0);
+  const repLogMB=repRows.reduce((a,r)=>a+r.log,0);
+  const repCount=repRows.length;
+  const repBiggest=repRows.slice().sort((a,b)=>b.total-a.total)[0]||null;
+  const repBigLog=repRows.slice().sort((a,b)=>b.log-a.log)[0]||null;
+  const srvScale=dataMB>0?repDataMB/dataMB:1;
+
+  const srv=rowsOf("dbGrowth");
+  const srvG=srv.filter(r=>r["Checklist Status"]==="Growing");
+  const srvMg=srv.filter(r=>r["Data File Status"]==="Growing");
+  const srvDay=sumBy(srvG,"Measured Growth Per Day (MB)");
+  const srvMDay=sumBy(srvMg,"Growth Without LDF Per Day (MB)");
+  const srvNet=sumBy(srv,"Measured Growth Per Day (MB)");
+  const ofSub=b=>'<span class="sub">of '+fmtInt(b)+'</span>';
+  const trackedFrom=srv.map(r=>r["Tracked From"]).filter(Boolean).sort();
+  const trackedTo=srv.map(r=>r["Tracked To"]).filter(Boolean).sort();
+  const period=trackedFrom.length?trackedFrom[0]+" → "+trackedTo[trackedTo.length-1]:"—";
+  const sparkTotal=sparkline(checklistServerSeries("total"),"#2f8f7f");
+  const sparkMdf=sparkline(checklistServerSeries("mdf"),"#a35fa0");
+
 
   return [
     {title:"Replication's Storage Details", icon:"💽", grad:TILE_GRADS.storage, items:[
-      {label:"Replicated Storage", value:fmtSize(repMB), hero:true},
-      {label:"Data Size", value:fmtSize(dataMB)},
-      {label:"Index Size", value:fmtSize(idxMB)},
-      {label:"BI Used Storage", value:kv("BI Used Storage")||"—"},
-      {label:"Held by Unused Tables", value:fmtSize(unusedMB)+share(unusedMB,repMB)},
-      {label:"Top-91 Tables' Share", value:kv("Top-91")||"—"}
+      {label:"Replica Storage Now", value:fmtSize(repTotalMB), hero:true, title:"Data + log files on the replication server (analysis_2.xlsx)"},
+      {label:"Data Files (MDF)", value:fmtSize(repDataMB)+share(repDataMB,repTotalMB)},
+      {label:"Log Files (LDF)", value:fmtSize(repLogMB)+share(repLogMB,repTotalMB)},
+      {label:"Databases", value:fmtInt(repCount)},
+      {label:"Largest Database", value:repBiggest?escapeHtml(repBiggest.db)+'<span class="sub">'+fmtSize(repBiggest.total)+'</span>':"—"},
+      {label:"Largest Log File", value:repBigLog?escapeHtml(repBigLog.db)+'<span class="sub">'+fmtSize(repBigLog.log)+'</span>':"—"},
+      {label:"BI Used Storage", value:kv("BI Used Storage")||"—", title:"From the analysis workbook"},
+      {label:"Held by Unused Tables", value:fmtSize(unusedMB)+share(unusedMB,repMB), title:"From the analysis workbook, on its own catalogue basis ("+fmtSize(repMB)+" replicated)"}
     ]},
     {title:"Database Details", icon:"🗄️", grad:TILE_GRADS.db, items:[
       {label:"Databases in Replication", value:fmtInt(db.length), hero:true},
@@ -1375,21 +1463,55 @@ function buildOverviewTiles(){
       {label:"Est. Size in 1 Year", value:fmtSize(curCovered+growDay*365)+share(growDay*365,curCovered)},
       {label:"Fastest-Growing Table", value:fastest?escapeHtml(fastest["Table Name"])+'<span class="sub">('+fmtSize(fastest["Est. Table Growth Per Day (MB)"])+'/day)</span>':"—",
         title:fastest?fastest["Database Name"]+" · "+fastest["Table Name"]:""}
+    ]},
+    {title:"Growth of Replication Server", icon:"🌐", grad:TILE_GRADS.server,
+     foot:sparkTotal?'<div class="tile-foot">'+sparkTotal+'<span class="foot-cap">Server size, '+escapeHtml(period)+'</span></div>':"", items:[
+      {label:"Growth per Day", value:fmtSize(srvDay), hero:true, title:"Trend through the checklist's daily size readings (data + log), growing databases only"},
+      {label:"Growth per Month", value:fmtSize(srvDay*30)},
+      {label:"Growth per Year", value:fmtSize(srvDay*365)},
+      {label:"Replica Size Now", value:fmtSize(repTotalMB), title:"From analysis_2.xlsx"},
+      {label:"Size in 1 Year", value:fmtSize(repTotalMB+srvDay*365)+share(srvDay*365,repTotalMB)},
+      {label:"Databases Growing", value:fmtInt(srvG.length)+ofSub(srv.length)},
+      {label:"Net Trend per Day", value:fmtSize(srvNet), title:"Including shrinking databases"}
+    ]},
+    {title:"Growth of Replication server without LDF", icon:"🗃️", grad:TILE_GRADS.nolog,
+     foot:sparkMdf?'<div class="tile-foot">'+sparkMdf+'<span class="foot-cap">Data files, from 1 Jun 2026</span></div>':"", items:[
+      {label:"Growth per Day", value:fmtSize(srvMDay), hero:true, title:"Data files (MDF) only — transaction log growth excluded"},
+      {label:"Growth per Month", value:fmtSize(srvMDay*30)},
+      {label:"Growth per Year", value:fmtSize(srvMDay*365)},
+      {label:"Data Files Now (MDF)", value:fmtSize(repDataMB), title:"From analysis_2.xlsx"},
+      {label:"Data Size in 1 Year", value:fmtSize(repDataMB+srvMDay*365)+share(srvMDay*365,repDataMB)},
+      {label:"Log Files Now (LDF)", value:fmtSize(repLogMB)+share(repLogMB,repTotalMB)},
+      {label:"Log Share of Growth", value:srvDay>0?fmtPct(Math.max(0,srvDay-srvMDay)/srvDay*100):"—", title:"How much of the daily growth is transaction log"}
     ]}
   ];
 }
 
+function renderTile(t){
+  return '<div class="tile" style="--tile-grad:'+t.grad+'">'
+    + '<div class="tile-head" style="background:'+t.grad+'"><span class="ticon">'+t.icon+'</span>'+escapeHtml(t.title)+'</div>'
+    + '<div class="tile-body">'
+    + t.items.map(i=>'<div class="trow'+(i.hero?" hero":"")+'"'+(i.title?' title="'+escapeHtml(i.title)+'"':'')+'><span class="tl">'+escapeHtml(i.label)+'</span><span class="tv">'+i.value+'</span></div>').join("")
+    + (t.foot||"")
+    + '</div></div>';
+}
 function renderOverviewBlocks(root){
   const ov=STATE.overview||{};
   const tiles=buildOverviewTiles();
-  let html='<div style="display:flex;flex-direction:column;gap:12px"><div class="tiles">'
-    + tiles.map(t=>
-        '<div class="tile" style="--tile-grad:'+t.grad+'">'
-        + '<div class="tile-head" style="background:'+t.grad+'"><span class="ticon">'+t.icon+'</span>'+escapeHtml(t.title)+'</div>'
-        + '<div class="tile-body">'
-        + t.items.map(i=>'<div class="trow'+(i.hero?" hero":"")+'"'+(i.title?' title="'+escapeHtml(i.title)+'"':'')+'><span class="tl">'+escapeHtml(i.label)+'</span><span class="tv">'+i.value+'</span></div>').join("")
-        + '</div></div>').join("")
-    + '</div>';
+  const groups=[];
+  tiles.forEach(t=>{
+    const g=TILE_GROUPS[t.title]||"Overview";
+    let e=groups.find(x=>x.title===g);
+    if(!e){ e={title:g, tiles:[]}; groups.push(e); }
+    e.tiles.push(t);
+  });
+  groups.sort((a,b)=>{
+    const ia=GROUP_ORDER.indexOf(a.title), ib=GROUP_ORDER.indexOf(b.title);
+    return (ia<0?99:ia)-(ib<0?99:ib);
+  });
+  let html='<div style="display:flex;flex-direction:column;gap:14px">'
+    + groups.map(g=>'<div><div class="groupbar" style="background:'+(GROUP_GRADS[g.title]||TILE_GRADS.db)+'">'+escapeHtml(g.title)+'</div>'
+        + '<div class="tiles" style="margin-top:8px">'+g.tiles.map(renderTile).join("")+'</div></div>').join("");
   html+='<div><div class="groupbar" style="background:'+TILE_GRADS.storage+'">Distribution</div><div class="charts" style="margin-top:7px">'
     + [["ovStorage","Replicated Storage by Database (GB)"],["ovStatus","Table Usage Status"],
        ["ovLevel","Usage Level (BI-used tables)"]]
