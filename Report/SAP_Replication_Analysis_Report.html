@@ -209,6 +209,7 @@ table.dt tfoot td.num{font-size:12.6px}
 <script src="lib/xlsx.full.min.js"></script>
 <script src="lib/chart.umd.min.js"></script>
 <script src="lib/embedded-data.js"></script>
+<script src="lib/growth-data.js"></script>
 <script>
 "use strict";
 
@@ -241,14 +242,14 @@ const DAILY_GROWTH_NOTE =
 +"growth; index growth is not modelled, so projected sizes are a lower bound.";
 
 const DB_GROWTH_NOTE =
- "Estimated per database, not measured server-wide. For each database, the sampled tables' combined insert "
-+"growth per day is divided by those tables' combined current size to give a daily growth rate; that rate is then "
-+"applied to the database's full Replicated Data Size (MB) to estimate the whole database's growth per day, 30 days "
-+"and year. This assumes unsampled tables grow at the same relative rate as the sampled ones. The sampled tables "
-+"are the busiest (BI-used and largest), measured in their busiest month, so the extrapolated figures lean high; "
-+"'Measured Growth Per Day' is the sampled tables alone and is a lower bound. The true figure lies between the two. "
-+"Databases with no sampled tables are marked 'Not sampled': no growth is estimated for them and their projected "
-+"size is shown unchanged.";
+ "Measured, not extrapolated: these figures come from the all-tables growth scan, which read every table with a "
++"CreateDate/UpdateDate column in each accessible database. The workbook's 'Approx Growth' row counts add inserts and "
++"updates together; updates rewrite existing rows rather than adding storage, so the size columns count inserts only. "
++"Each table's inserted rows are converted to MB with that table's own average row size (Data Size (MB) ÷ Row Count "
++"from the replication catalogue) and summed per database. Per Day and Per Month come from each table's busiest "
++"calendar month, Per Year from each table's busiest calendar year; those peaks need not coincide across tables, so "
++"the figures lean high. Index growth is not included. 'Data Check' compares each database's table and row counts "
++"with the replication catalogue.";
 
 const SHEET_CONFIGS = {
   databases:{
@@ -619,44 +620,49 @@ const SHEET_CONFIGS = {
   },
   dbGrowth:{
     derived:true, freeze:2,
-    title:"Daily Growth of Replication Server", sub:"Database-wise estimate of how fast the replication server grows per day, month and year",
+    title:"Daily Growth of Replication Server", sub:"Measured growth of every replication database per day, month and year, from the all-tables growth scan",
     dbKey:"Database Name",
-    defaultSort:{key:"Est. DB Growth Per Day (MB)", dir:"desc"},
-    searchable:["Database Name","Estimate Basis","Fastest-Growing Table"],
+    defaultSort:{key:"Est. Growth Per Day (MB)", dir:"desc"},
+    searchable:["Database Name","Growth Status","Data Check","Data Check Detail","Fastest-Growing Table"],
     columns:[
       {key:"Database Name", type:"text"},
-      {key:"Table Count", type:"int"},
-      {key:"Tables Covered", type:"int"},
-      {key:"Coverage %", type:"pctsmall"},
-      {key:"Estimate Basis", type:"badge", colorMap:{"Not sampled":"muted"}},
+      {key:"Total Tables In DB", type:"int"},
+      {key:"Tables Sampled", type:"int"},
+      {key:"Tables With Growth Data", type:"int"},
+      {key:"Total Row Count", type:"int"},
       {key:"Replicated Data Size (MB)", type:"size"},
-      {key:"Covered Tables Size (MB)", type:"size"},
-      {key:"Measured Growth Per Day (MB)", type:"size"},
-      {key:"Growth Rate Per Day %", type:"pctsmall"},
-      {key:"Est. DB Growth Per Day (MB)", type:"size"},
-      {key:"Est. DB Growth in 30 Days (MB)", type:"size"},
-      {key:"Est. DB Growth in 1 Year (MB)", type:"size"},
-      {key:"Est. DB Size in 30 Days (MB)", type:"size"},
+      {key:"Rows Inserted Per Day", type:"num1"},
+      {key:"Rows Updated Per Day", type:"num1"},
+      {key:"Approx Growth Per Day (rows)", type:"num1"},
+      {key:"Approx Growth Per Month (rows)", type:"int"},
+      {key:"Approx Growth Per Year (rows)", type:"int"},
+      {key:"Est. Growth Per Day (MB)", type:"size"},
+      {key:"Est. Growth Per Month (MB)", type:"size"},
+      {key:"Est. Growth Per Year (MB)", type:"size"},
       {key:"Est. DB Size in 1 Year (MB)", type:"size"},
-      {key:"Fastest-Growing Table", type:"text"}
+      {key:"Est. Growth Per Year % of DB", type:"pctsmall"},
+      {key:"Fastest-Growing Table", type:"text"},
+      {key:"Growth Status", type:"badge", colorMap:{"Measured":"good","Not Available":"muted"}},
+      {key:"Data Check", type:"badge", colorMap:{"Matches":"good","Differs":"warn","Not in catalogue":"bad"}},
+      {key:"Data Check Detail", type:"text"}
     ],
     kpis:(rows)=>{
-      const est=rows.filter(r=>r["Est. DB Growth Per Day (MB)"]!=="");
-      const day=sumBy(est,"Est. DB Growth Per Day (MB)");
-      const cur=sumBy(rows,"Replicated Data Size (MB)");
+      const m=rows.filter(r=>r["Growth Status"]==="Measured");
+      const yr=sumBy(m,"Est. Growth Per Year (MB)"), cur=sumBy(rows,"Replicated Data Size (MB)");
       return [
-        {label:"Databases Estimated", value:fmtInt(est.length)+" of "+fmtInt(rows.length)},
-        {label:"Est. Growth / Day", value:fmtSize(day)},
-        {label:"Est. Growth / 30 Days", value:fmtSize(day*30)},
-        {label:"Est. Growth / Year", value:fmtSize(day*365)},
+        {label:"Databases Measured", value:fmtInt(m.length)+" of "+fmtInt(rows.length)},
+        {label:"Growth / Day", value:fmtSize(sumBy(m,"Est. Growth Per Day (MB)"))},
+        {label:"Growth / Month", value:fmtSize(sumBy(m,"Est. Growth Per Month (MB)"))},
+        {label:"Growth / Year", value:fmtSize(yr)},
         {label:"Current Size", value:fmtSize(cur)},
-        {label:"Est. Size in 1 Year", value:fmtSize(cur+day*365)},
-        {label:"Measured Growth / Day", value:fmtSize(sumBy(rows,"Measured Growth Per Day (MB)"))}
+        {label:"Size in 1 Year", value:fmtSize(cur+yr)},
+        {label:"Rows Inserted / Day", value:fmtInt(sumBy(m,"Rows Inserted Per Day"))},
+        {label:"Data Check", value:fmtInt(rows.filter(r=>r["Data Check"]==="Matches").length)+" of "+fmtInt(rows.length)+" match"}
       ];
     },
     charts:[
-      {title:"Est. DB Growth Per Day (MB) by database", build:(rows)=>topNBarChart(rows.filter(r=>r["Est. DB Growth Per Day (MB)"]!==""),"Database Name","Est. DB Growth Per Day (MB)",18,"MB",1)},
-      {title:"Share of estimated server growth", build:(rows)=>sumByDonut(rows.filter(r=>r["Est. DB Growth Per Day (MB)"]!==""),"Database Name","Est. DB Growth Per Day (MB)",10)}
+      {title:"Est. Growth Per Day (MB) by database", build:(rows)=>topNBarChart(rows.filter(r=>r["Growth Status"]==="Measured"),"Database Name","Est. Growth Per Day (MB)",18,"MB",1)},
+      {title:"Share of server growth per year", build:(rows)=>sumByDonut(rows.filter(r=>r["Growth Status"]==="Measured"),"Database Name","Est. Growth Per Year (MB)",10)}
     ]
   }
 };
@@ -880,47 +886,85 @@ function buildDailyGrowth(){
 }
 
 /* ------------------------------ load ------------------------------ */
-/* Replication-server growth per database: the sampled tables' growth rate (growth ÷ their
-   size) scaled to the whole database. Unsampled databases get no estimate rather than zero. */
+/* Replication-server growth per database, from the all-tables growth workbook. Its row
+   counts add inserts and updates; only inserts add storage, so sizes use inserts, each
+   table's rows converted with its own average row size from the replication catalogue. */
 function buildDbGrowth(){
-  const dbs=STATE.data.databases?STATE.data.databases.rows:[];
-  const dg=STATE.data.dailyGrowth?STATE.data.dailyGrowth.rows:[];
+  const g=STATE.growth;
+  if(!g) return [];
+  const n=v=>{ const x=Number(v); return (v===""||v==null||isNaN(x))?NaN:x; };
+  const cons=new Map((STATE.data.databases?STATE.data.databases.rows:[]).map(r=>[String(r["Database Name"]).trim().toUpperCase(),r]));
+  const cat=new Map();
+  (STATE.data.tables?STATE.data.tables.rows:[]).forEach(r=>cat.set(String(r["Database Name"]).trim().toUpperCase()+"|"+String(r["Table Name"]).trim().toLowerCase(),r));
   const byDb=new Map();
-  dg.forEach(r=>{
-    const k=String(r["Database Name"]||"").trim().toUpperCase();
+  g.detail.forEach(d=>{
+    const k=String(d["Database Name"]).trim().toUpperCase();
     if(!byDb.has(k)) byDb.set(k,[]);
-    byDb.get(k).push(r);
+    byDb.get(k).push(d);
   });
-  return dbs.map(d=>{
-    const name=String(d["Database Name"]||"").trim();
-    const tablesTotal=toNum(d["Table Count"]);
-    const dbMB=toNum(d["Replicated Data Size (MB)"]);
-    const cov=(byDb.get(name.toUpperCase())||[]).filter(r=>r["Est. Table Growth Per Day (MB)"]!==""&&r["Current Table Size (MB)"]!=="");
-    const n=cov.length;
-    const covMB=sumBy(cov,"Current Table Size (MB)");
-    const measMB=sumBy(cov,"Est. Table Growth Per Day (MB)");
-    const rate=(n&&covMB>0)?measMB/covMB:NaN;
-    const estDay=(!isNaN(rate)&&!isNaN(dbMB))?rate*dbMB:NaN;
-    const has=!isNaN(estDay);
-    const top=cov.slice().sort((a,b)=>b["Est. Table Growth Per Day (MB)"]-a["Est. Table Growth Per Day (MB)"])[0];
+  return g.summary.map(s=>{
+    const name=String(s["Database Name"]).trim(), key=name.toUpperCase();
+    const c=cons.get(key), det=byDb.get(key)||[];
+    let insDay=0,updDay=0,okTables=0,dayMB=0,monthMB=0,yearMB=0,top="",topMB=0;
+    det.forEach(d=>{
+      const i=n(d["Avg Insert / Day (approx)"]), u=n(d["Avg Update / Day (approx)"]);
+      if(!isNaN(i)) insDay+=i;
+      if(!isNaN(u)) updDay+=u;
+      if(String(d["Status / Note"]).trim()==="OK") okTables++;
+      if(isNaN(i)||i<=0) return;
+      const t=cat.get(key+"|"+String(d["Table Name"]).split(".").pop().trim().toLowerCase());
+      const rc=t?n(t["Row Count"]):NaN, dm=t?n(t["Data Size (MB)"]):NaN;
+      if(!(rc>0)||isNaN(dm)) return;
+      const rowMB=dm/rc, tMB=i*rowMB;
+      dayMB+=tMB;
+      const mRows=n(d["Busiest Month Rows (Insert)"]), yRows=n(d["Busiest Year Rows (Insert)"]);
+      if(!isNaN(mRows)) monthMB+=mRows*rowMB;
+      if(!isNaN(yRows)) yearMB+=yRows*rowMB;
+      if(tMB>topMB){ topMB=tMB; top=String(d["Table Name"]); }
+    });
+    const measured=!isNaN(n(s["Approx Growth Per Day (rows)"]));
+    const dbMB=c?n(c["Replicated Data Size (MB)"]):NaN;
+    const tNew=n(s["Total Tables In DB"]), rNew=n(s["Total Row Count"]);
+    const tOld=c?n(c["Table Count"]):NaN, rOld=c?n(c["Total Rows"]):NaN;
+    const same=c&&tNew===tOld&&rNew===rOld;
+    const signed=v=>(v>=0?"+":"")+fmtInt(v);
     return {
       "Database Name":name,
-      "Table Count":isNaN(tablesTotal)?"":tablesTotal,
-      "Tables Covered":n,
-      "Coverage %":(!isNaN(tablesTotal)&&tablesTotal>0)?n/tablesTotal*100:"",
-      "Estimate Basis":n?("Sampled · "+n+" table"+(n===1?"":"s")):"Not sampled",
+      "Total Tables In DB":isNaN(tNew)?"":tNew,
+      "Tables Sampled":isNaN(n(s["Tables Sampled"]))?"":n(s["Tables Sampled"]),
+      "Tables With Growth Data":okTables,
+      "Total Row Count":isNaN(rNew)?"":rNew,
       "Replicated Data Size (MB)":isNaN(dbMB)?"":dbMB,
-      "Covered Tables Size (MB)":n?covMB:"",
-      "Measured Growth Per Day (MB)":n?measMB:"",
-      "Growth Rate Per Day %":has?rate*100:"",
-      "Est. DB Growth Per Day (MB)":has?estDay:"",
-      "Est. DB Growth in 30 Days (MB)":has?estDay*30:"",
-      "Est. DB Growth in 1 Year (MB)":has?estDay*365:"",
-      "Est. DB Size in 30 Days (MB)":isNaN(dbMB)?"":dbMB+(has?estDay*30:0),
-      "Est. DB Size in 1 Year (MB)":isNaN(dbMB)?"":dbMB+(has?estDay*365:0),
-      "Fastest-Growing Table":top?top["Table Name"]:""
+      "Rows Inserted Per Day":measured?insDay:"",
+      "Rows Updated Per Day":measured?updDay:"",
+      "Approx Growth Per Day (rows)":measured?n(s["Approx Growth Per Day (rows)"]):"",
+      "Approx Growth Per Month (rows)":measured?n(s["Approx Growth Per Month (rows)"]):"",
+      "Approx Growth Per Year (rows)":measured?n(s["Approx Growth Per Year (rows)"]):"",
+      "Est. Growth Per Day (MB)":measured?dayMB:"",
+      "Est. Growth Per Month (MB)":measured?monthMB:"",
+      "Est. Growth Per Year (MB)":measured?yearMB:"",
+      "Est. DB Size in 1 Year (MB)":isNaN(dbMB)?"":dbMB+(measured?yearMB:0),
+      "Est. Growth Per Year % of DB":(measured&&dbMB>0)?yearMB/dbMB*100:"",
+      "Fastest-Growing Table":top,
+      "Growth Status":measured?"Measured":"Not Available",
+      "Data Check":!c?"Not in catalogue":(same?"Matches":"Differs"),
+      "Data Check Detail":!c?"No replication catalogue entry for this database":
+        (same?"Table and row counts match":"Tables "+signed(tNew-tOld)+" ("+fmtInt(tNew)+" vs "+fmtInt(tOld)+"), rows "+signed(rNew-rOld))
     };
   });
+}
+
+async function gunzipJson(b64){
+  const bin=atob(b64), bytes=new Uint8Array(bin.length);
+  for(let i=0;i<bin.length;i++) bytes[i]=bin.charCodeAt(i);
+  return JSON.parse(await new Response(new Blob([bytes]).stream().pipeThrough(new DecompressionStream("gzip"))).text());
+}
+async function loadGrowthData(){
+  const g=window.EMBEDDED_GROWTH;
+  if(!g||!g.gz){ STATE.growth=null; return; }
+  const p=await gunzipJson(g.gz);
+  const objs=sec=>sec.rows.map(a=>{ const o={}; for(let i=0;i<sec.headers.length;i++) o[sec.headers[i]]=a[i]; return o; });
+  STATE.growth={name:p.name||g.name, generated:p.generated||g.generated, note:p.note||"", summary:objs(p.summary), detail:objs(p.detail)};
 }
 
 function freshSectionState(id){
@@ -928,7 +972,9 @@ function freshSectionState(id){
 }
 function finalizeData(fileName,generated){
   STATE.data.dailyGrowth={rows:buildDailyGrowth(),note:DAILY_GROWTH_NOTE};
-  STATE.data.dbGrowth={rows:buildDbGrowth(),note:DB_GROWTH_NOTE};
+  STATE.data.dbGrowth={rows:buildDbGrowth(),
+    note:STATE.growth ? DB_GROWTH_NOTE+" Source workbook ("+STATE.growth.name+") note: "+STATE.growth.note
+                      : "The all-tables growth workbook (lib/growth-data.js) is not loaded, so replication server growth cannot be shown."};
   Object.keys(SHEET_CONFIGS).forEach(id=>{ if(!STATE.sections[id]) STATE.sections[id]=freshSectionState(id); });
   const canonical=(STATE.data.databases?STATE.data.databases.rows:[]).map(r=>String(r["Database Name"]||"").trim()).filter(Boolean);
   if(canonical.length){
@@ -1198,29 +1244,36 @@ function buildOverviewTiles(){
     .sort((a,b)=>b["Est. Table Growth Per Day (MB)"]-a["Est. Table Growth Per Day (MB)"])[0];
 
   const srv=rowsOf("dbGrowth");
-  const srvCov=srv.filter(r=>r["Est. DB Growth Per Day (MB)"]!=="")
-    .sort((a,b)=>b["Est. DB Growth Per Day (MB)"]-a["Est. DB Growth Per Day (MB)"]);
-  const srvUncov=srv.filter(r=>r["Est. DB Growth Per Day (MB)"]==="");
-  const srvDay=sumBy(srvCov,"Est. DB Growth Per Day (MB)");
+  const srvM=srv.filter(r=>r["Growth Status"]==="Measured")
+    .sort((a,b)=>b["Est. Growth Per Day (MB)"]-a["Est. Growth Per Day (MB)"]);
+  const srvNA=srv.filter(r=>r["Growth Status"]!=="Measured");
+  const srvDiff=srv.filter(r=>r["Data Check"]!=="Matches");
+  const srvDay=sumBy(srvM,"Est. Growth Per Day (MB)"), srvMonth=sumBy(srvM,"Est. Growth Per Month (MB)"), srvYear=sumBy(srvM,"Est. Growth Per Year (MB)");
   const srvCur=sumBy(srv,"Replicated Data Size (MB)");
-  const srvTables=sumBy(srv,"Table Count"), srvCovTables=sumBy(srv,"Tables Covered");
-  const ofSub=(a,b)=>'<span class="sub">of '+fmtInt(b)+'</span>';
-  const srvTableHtml='<div class="mwrap"><table class="mtable"><thead><tr>'
-    +'<th>Database</th><th class="num">Tables Covered</th><th class="num">Growth / Day</th>'
-    +'<th class="num">Growth / 30 Days</th><th class="num">Growth / Year</th><th class="num">Current Size</th><th class="num">Size in 1 Year</th>'
+  const srvTables=sumBy(srv,"Total Tables In DB"), srvGrowTables=sumBy(srv,"Tables With Growth Data"), srvScanned=sumBy(srv,"Tables Sampled");
+  const ofSub=b=>'<span class="sub">of '+fmtInt(b)+'</span>';
+  const srvTableHtml=!srv.length
+    ? '<div class="mnote">The all-tables growth workbook is not loaded, so server growth cannot be shown.</div>'
+    : '<div class="mwrap"><table class="mtable"><thead><tr>'
+    +'<th>Database</th><th class="num">Tables With Growth Data</th><th class="num">Rows Inserted / Day</th>'
+    +'<th class="num">Growth / Day</th><th class="num">Growth / Month</th><th class="num">Growth / Year</th>'
+    +'<th class="num">Current Size</th><th class="num">Size in 1 Year</th>'
     +'</tr></thead><tbody>'
-    +srvCov.map(r=>'<tr><td>'+escapeHtml(r["Database Name"])+'</td>'
-      +'<td class="num">'+fmtInt(r["Tables Covered"])+ofSub(0,r["Table Count"])+'</td>'
-      +'<td class="num">'+fmtSize(r["Est. DB Growth Per Day (MB)"])+'</td>'
-      +'<td class="num">'+fmtSize(r["Est. DB Growth in 30 Days (MB)"])+'</td>'
-      +'<td class="num">'+fmtSize(r["Est. DB Growth in 1 Year (MB)"])+'</td>'
+    +srvM.map(r=>'<tr><td>'+escapeHtml(r["Database Name"])+'</td>'
+      +'<td class="num">'+fmtInt(r["Tables With Growth Data"])+ofSub(r["Total Tables In DB"])+'</td>'
+      +'<td class="num">'+fmtInt(r["Rows Inserted Per Day"])+'</td>'
+      +'<td class="num">'+fmtSize(r["Est. Growth Per Day (MB)"])+'</td>'
+      +'<td class="num">'+fmtSize(r["Est. Growth Per Month (MB)"])+'</td>'
+      +'<td class="num">'+fmtSize(r["Est. Growth Per Year (MB)"])+'</td>'
       +'<td class="num">'+fmtSize(r["Replicated Data Size (MB)"])+'</td>'
       +'<td class="num">'+fmtSize(r["Est. DB Size in 1 Year (MB)"])+'</td></tr>').join("")
     +'</tbody><tfoot><tr><td>Server total</td>'
-    +'<td class="num">'+fmtInt(srvCovTables)+ofSub(0,srvTables)+'</td>'
-    +'<td class="num">'+fmtSize(srvDay)+'</td><td class="num">'+fmtSize(srvDay*30)+'</td><td class="num">'+fmtSize(srvDay*365)+'</td>'
-    +'<td class="num">'+fmtSize(srvCur)+'</td><td class="num">'+fmtSize(srvCur+srvDay*365)+'</td></tr></tfoot></table></div>'
-    +(srvUncov.length?'<div class="mnote">Not sampled, so no growth estimated: '+escapeHtml(srvUncov.map(r=>r["Database Name"]).join(", "))+'. Their current size is included in the server total unchanged.</div>':"");
+    +'<td class="num">'+fmtInt(srvGrowTables)+ofSub(srvTables)+'</td>'
+    +'<td class="num">'+fmtInt(sumBy(srvM,"Rows Inserted Per Day"))+'</td>'
+    +'<td class="num">'+fmtSize(srvDay)+'</td><td class="num">'+fmtSize(srvMonth)+'</td><td class="num">'+fmtSize(srvYear)+'</td>'
+    +'<td class="num">'+fmtSize(srvCur)+'</td><td class="num">'+fmtSize(srvCur+srvYear)+'</td></tr></tfoot></table></div>'
+    +(srvNA.length?'<div class="mnote">No growth measurable (no CreateDate/UpdateDate column in any table): '+escapeHtml(srvNA.map(r=>r["Database Name"]).join(", "))+'. Their current size is included in the server total unchanged.</div>':"")
+    +(srvDiff.length?'<div class="mnote">Data check — counts differ from the replication catalogue: '+escapeHtml(srvDiff.map(r=>r["Database Name"]+" ("+r["Data Check Detail"]+")").join("; "))+'.</div>':"");
 
   return [
     {title:"Replication's Storage Details", icon:"💽", grad:TILE_GRADS.storage, items:[
@@ -1283,14 +1336,14 @@ function buildOverviewTiles(){
         title:fastest?fastest["Database Name"]+" · "+fastest["Table Name"]:""}
     ]},
     {title:"Daily Growth of Replication Server", icon:"🌐", grad:TILE_GRADS.server, wide:true, bodyHtml:srvTableHtml, items:[
-      {label:"Est. Server Growth per Day", value:fmtSize(srvDay), hero:true, title:"Each database's sampled growth rate applied to its full replicated size"},
-      {label:"Growth in 30 Days", value:fmtSize(srvDay*30)},
-      {label:"Growth in 1 Year", value:fmtSize(srvDay*365)},
+      {label:"Server Growth per Day", value:fmtSize(srvDay), hero:true, title:"Rows inserted per day × each table's average row size, summed over every measured table"},
+      {label:"Growth per Month", value:fmtSize(srvMonth), title:"Each table's busiest calendar month"},
+      {label:"Growth per Year", value:fmtSize(srvYear), title:"Each table's busiest calendar year"},
       {label:"Current Server Size", value:fmtSize(srvCur)},
-      {label:"Est. Server Size in 1 Year", value:fmtSize(srvCur+srvDay*365)+share(srvDay*365,srvCur)},
-      {label:"Measured Growth per Day", value:fmtSize(sumBy(srv,"Measured Growth Per Day (MB)")), title:"Sampled tables only — a lower bound"},
-      {label:"Databases Estimated", value:fmtInt(srvCov.length)+ofSub(0,srv.length)},
-      {label:"Tables Covered", value:fmtInt(srvCovTables)+ofSub(0,srvTables)}
+      {label:"Server Size in 1 Year", value:fmtSize(srvCur+srvYear)+share(srvYear,srvCur)},
+      {label:"Rows Inserted per Day", value:fmtInt(sumBy(srvM,"Rows Inserted Per Day")), title:"Workbook growth incl. updates: "+fmtInt(sumBy(srvM,"Approx Growth Per Day (rows)"))+" rows/day"},
+      {label:"Databases Measured", value:fmtInt(srvM.length)+ofSub(srv.length)},
+      {label:"Tables With Growth Data", value:fmtInt(srvGrowTables)+ofSub(srvTables), title:fmtInt(srvScanned)+" tables with date columns scanned"}
     ]}
   ];
 }
@@ -1640,6 +1693,7 @@ function showError(m){ document.getElementById("errBox").innerHTML='<div class="
 async function loadData(){
   const d=window.EMBEDDED_DATA;
   if(!d||!d.gz) throw new Error("lib/embedded-data.js is missing or empty — regenerate it from the workbook.");
+  await loadGrowthData();
   await loadEmbeddedData(d.gz,d.name||"Embedded dataset",d.generated||"");
 }
 async function boot(){

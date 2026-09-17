@@ -59,6 +59,20 @@ in `Core File\` into something a non-technical stakeholder can open and click th
   browser lacks `DecompressionStream`. Don't inline the payload into the HTML; a separate
   file keeps the report editable.
 
+### Second data file: `growth-data.js`
+
+`Report\lib\growth-data.js` (`window.EMBEDDED_GROWTH = {name, generated, gz}`) packs
+`Core File\SAP_Database_Growth_AllTables_Report.xlsx` the same way: `{name, generated, note,
+summary:{headers,rows}, detail:{headers,rows}}`. Sheet `01_DB_Wise_Growth_Summary` has its note in
+row 0 and **headers on row 2**; `02_Table_Wise_Growth_Detail` has headers on row 0. It drives
+`buildDbGrowth()` (the Replication Server growth tile and page). Things to keep true when touching it:
+- The workbook's "Approx Growth … (rows)" is **inserts + updates**. Storage growth must use
+  inserts only (`Avg Insert / Day`, `Busiest Month/Year Rows (Insert)`).
+- Rows are sized per table with that table's `Data Size (MB) ÷ Row Count` from the replication
+  catalogue (`STATE.data.tables`), matched on database + table name without the `dbo.` prefix.
+- Per Year is each table's busiest calendar year, not per-day × 365 — don't "fix" that.
+- Regenerate it with the same headless-Chrome pack step as below, XHR-ing this workbook instead.
+
 ### Regenerating `embedded-data.js` after the workbook changes
 
 The embedded data is a snapshot, so it must be rebuilt whenever `Core File\*.xlsx` changes.

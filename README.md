@@ -39,7 +39,7 @@ Twelve sections, reachable from the sidebar:
 | Top Insights | The 50 largest tables, storage against BI usage |
 | Insertion Trends | Approximate daily insert/update volume, per table and per database |
 | Daily Growth of BI Reports | Estimated data written per day per sampled BI table — cells written (column count × rows/day), storage cost per day, and each table's projected size in 30 days and 1 year |
-| Daily Growth of Replication Server | Database-wise estimate of server growth per day, 30 days and year — each database's sampled growth rate scaled to its full size, alongside the measured lower bound |
+| Daily Growth of Replication Server | Measured growth of every replication database per day, month and year, from the all-tables growth scan (`Core File/SAP_Database_Growth_AllTables_Report.xlsx`) — rows inserted and updated, inserts sized in MB with each table's own row size, and a data check against the replication catalogue |
 
 Every section supports Excel-style per-column dropdown filters, click-to-sort on any column,
 a section-wide search, a database filter, frozen leading columns, and a TOTAL row summing
@@ -56,9 +56,10 @@ method is spelled out in the Methodology panel on that page.
 
 | Path | Purpose |
 |---|---|
-| `Core File/` | The source workbook. The data of record. |
+| `Core File/` | The source workbooks, the data of record: the replication analysis and the all-tables growth scan |
 | `Report/` | The generated dashboard — open `SAP_Replication_Analysis_Report.html` |
 | `Report/lib/embedded-data.js` | The analysed data, pre-parsed and gzipped (~2.3 MB); this is what auto-loads |
+| `Report/lib/growth-data.js` | The all-tables growth scan, pre-parsed and gzipped (~100 KB); feeds the Replication Server growth tile and page |
 | `Report/lib/*.min.js` | SheetJS and Chart.js, vendored so the report works offline |
 | `Reference Report/` | An unrelated SCM dashboard, kept only as a design reference |
 | `.claude/skills/report-generator/` | Skill used to regenerate or extend the report |
