@@ -73,20 +73,6 @@ button{font-family:inherit}
 .trow.hero .tl{font-size:11.2px;text-transform:uppercase;letter-spacing:.4px}
 .trow.hero .tv{font-size:21px;background:var(--tile-grad);-webkit-background-clip:text;background-clip:text;color:transparent}
 .trow .tv .sub{font-size:11px;font-weight:700;color:var(--ink2);margin-left:5px}
-.tile.wide{grid-column:1/-1}
-.wstats{display:grid;grid-template-columns:repeat(auto-fit,minmax(158px,1fr));gap:8px;margin:5px 0 11px}
-.wstat{background:var(--panel2);border:1px solid var(--line);border-radius:9px;padding:8px 10px}
-.wstat .tl{font-size:10.3px;color:var(--ink2);font-weight:700;text-transform:uppercase;letter-spacing:.3px}
-.wstat .tv{font-size:15px;font-weight:800;margin-top:2px;font-variant-numeric:tabular-nums}
-.wstat.hero .tv{font-size:19px;background:var(--tile-grad);-webkit-background-clip:text;background-clip:text;color:transparent}
-.wstat .sub,.mtable .sub{font-size:10.5px;font-weight:700;color:var(--ink2);margin-left:4px}
-.mwrap{overflow-x:auto}
-.mtable{width:100%;border-collapse:collapse;font-size:12px}
-.mtable th{text-align:left;font-size:10.3px;text-transform:uppercase;letter-spacing:.3px;color:var(--ink2);padding:6px 9px;border-bottom:1px solid var(--line);white-space:nowrap}
-.mtable td{padding:6px 9px;border-bottom:1px dashed var(--line);white-space:nowrap}
-.mtable .num{text-align:right;font-variant-numeric:tabular-nums}
-.mtable tfoot td{font-weight:800;border-top:2px solid var(--accent);border-bottom:none;background:linear-gradient(135deg,var(--tot-a),var(--tot-b));color:var(--tot-ink)}
-.mnote{font-size:11px;color:var(--ink2);margin-top:7px}
 .kpis{display:grid;grid-template-columns:repeat(auto-fit,minmax(152px,1fr));gap:9px}
 .kpi{background:var(--panel);border:1px solid var(--line);border-radius:11px;padding:10px 12px;box-shadow:var(--shadow);position:relative;overflow:hidden;transition:.18s}
 .kpi:hover{transform:translateY(-2px);box-shadow:var(--shadow-lg)}
@@ -251,6 +237,10 @@ const DB_GROWTH_NOTE =
 +"maintenance shrink cannot cancel out real growth; the Net Trend figure includes every database for comparison. "
 +"Projected size applies that growth to the database's Replicated Data Size (MB) from the replication catalogue — the "
 +"checklist tracks the source databases that feed replication, so their sizes differ from the replica's own figures. "
++"From 1 June 2026 the checklist records each day's size split into MDF (data files) and LDF (transaction logs); "
++"the 'without LDF' figures trend the MDF series alone, so they exclude log growth, which is driven by backup and "
++"recovery-model settings rather than by data volume. May's readings carry only a combined total, so the without-LDF "
++"trend starts in June. "
 +"Row activity columns come from the all-tables growth scan. Earlier versions of this page estimated growth from "
 +"table row counts; those estimates are replaced by these measurements. "
 +"Superseded note — the all-tables growth scan read every table with a "
@@ -652,8 +642,16 @@ const SHEET_CONFIGS = {
       {key:"Measured Growth Per Day (MB)", type:"size"},
       {key:"Measured Growth Per Month (MB)", type:"size"},
       {key:"Measured Growth Per Year (MB)", type:"size"},
+      {key:"Data File Status", type:"badge", colorMap:{"Growing":"good","Shrinking":"accent","Low confidence":"warn","No readings":"muted"}},
+      {key:"Data File Size at Latest (MB)", type:"size"},
+      {key:"Log File Size at Latest (MB)", type:"size"},
+      {key:"Log Share of Size %", type:"pctsmall"},
+      {key:"Growth Without LDF Per Day (MB)", type:"size"},
+      {key:"Growth Without LDF Per Month (MB)", type:"size"},
+      {key:"Growth Without LDF Per Year (MB)", type:"size"},
       {key:"Replicated Data Size (MB)", type:"size"},
       {key:"Est. DB Size in 1 Year (MB)", type:"size"},
+      {key:"Est. DB Size in 1 Year without LDF (MB)", type:"size"},
       {key:"Growth Per Year % of DB", type:"pctsmall"},
       {key:"Rows Inserted Per Day", type:"num1"},
       {key:"Rows Updated Per Day", type:"num1"},
@@ -664,20 +662,23 @@ const SHEET_CONFIGS = {
     ],
     kpis:(rows)=>{
       const grow=rows.filter(r=>r["Checklist Status"]==="Growing");
+      const mGrow=rows.filter(r=>r["Data File Status"]==="Growing");
       const day=sumBy(grow,"Measured Growth Per Day (MB)"), cur=sumBy(rows,"Replicated Data Size (MB)");
+      const mDay=sumBy(mGrow,"Growth Without LDF Per Day (MB)");
       return [
         {label:"Databases Growing", value:fmtInt(grow.length)+" of "+fmtInt(rows.length)},
         {label:"Growth / Day", value:fmtSize(day)},
-        {label:"Growth / Month", value:fmtSize(day*30)},
         {label:"Growth / Year", value:fmtSize(day*365)},
+        {label:"Growth / Day without LDF", value:fmtSize(mDay)},
+        {label:"Growth / Year without LDF", value:fmtSize(mDay*365)},
         {label:"Current Size", value:fmtSize(cur)},
         {label:"Size in 1 Year", value:fmtSize(cur+day*365)},
-        {label:"Net Trend / Day", value:fmtSize(sumBy(rows,"Measured Growth Per Day (MB)"))},
-        {label:"Readings Tracked", value:fmtInt(sumBy(rows,"Readings"))}
+        {label:"Net Trend / Day", value:fmtSize(sumBy(rows,"Measured Growth Per Day (MB)"))}
       ];
     },
     charts:[
       {title:"Measured Growth Per Day (MB) by database", build:(rows)=>topNBarChart(rows.filter(r=>r["Checklist Status"]==="Growing"),"Database Name","Measured Growth Per Day (MB)",18,"MB",1)},
+      {title:"Growth Without LDF Per Day (MB) by database", build:(rows)=>topNBarChart(rows.filter(r=>r["Data File Status"]==="Growing"),"Database Name","Growth Without LDF Per Day (MB)",18,"MB",1)},
       {title:"Share of measured yearly growth", build:(rows)=>sumByDonut(rows.filter(r=>r["Checklist Status"]==="Growing"),"Database Name","Measured Growth Per Year (MB)",10)}
     ]
   }
@@ -695,7 +696,8 @@ const TILE_GRADS = {
   sps:     "linear-gradient(135deg,#b45309,#e08a2e)",
   growth:  "linear-gradient(135deg,#a1265c,#d4517e)",
   tstore:  "linear-gradient(135deg,#34478a,#5b7fcf)",
-  server:  "linear-gradient(135deg,#0f5e6e,#2f8f7f 55%,#6a9f45)"
+  server:  "linear-gradient(135deg,#0f5e6e,#2f8f7f 55%,#6a9f45)",
+  nolog:   "linear-gradient(135deg,#6b4f9e,#a35fa0 60%,#c98a4b)"
 };
 
 const STATE = {
@@ -930,6 +932,17 @@ function buildGrowthTables(){
 /* Replication growth measured from the DBA daily checklist: a least-squares trend through
    each database's daily size readings. Shrinks (restores, purges) and short series are
    flagged rather than averaged away, so only genuinely growing databases feed the totals. */
+/* Least-squares trend through one series of [excelDate, MB] readings. */
+function trendOf(obs){
+  const o=(obs||[]).slice().sort((a,b)=>a[0]-b[0]);
+  if(o.length<2) return {n:o.length, status:"No readings", slope:NaN};
+  const N=o.length, days=o[N-1][0]-o[0][0];
+  const sx=o.reduce((a,x)=>a+x[0],0), sy=o.reduce((a,x)=>a+x[1],0);
+  const sxy=o.reduce((a,x)=>a+x[0]*x[1],0), sxx=o.reduce((a,x)=>a+x[0]*x[0],0);
+  const den=N*sxx-sx*sx, slope=den?(N*sxy-sx*sy)/den:NaN;
+  const status=isNaN(slope)?"No readings":((N<20||days<30)?"Low confidence":(slope>0?"Growing":"Shrinking"));
+  return {n:N, days, first:o[0][1], last:o[N-1][1], from:o[0][0], to:o[N-1][0], slope, status};
+}
 function buildDbGrowth(){
   const n=v=>{ const x=Number(v); return (v===""||v==null||isNaN(x))?NaN:x; };
   const norm=s=>String(s).toLowerCase().replace(/[^a-z0-9]/g,"");
@@ -944,44 +957,41 @@ function buildDbGrowth(){
   return (STATE.data.databases?STATE.data.databases.rows:[]).map(c=>{
     const name=String(c["Database Name"]).trim(), key=name.toUpperCase();
     const chk=clMap.get(norm(name)), s=act.get(norm(name)), tabs=byDb.get(key)||[];
-    const obs=chk?chk.obs.slice().sort((a,b)=>a[0]-b[0]):[];
-    let status="No readings", days="", slope=NaN, firstMB=NaN, lastMB=NaN, from="", to="";
-    if(obs.length>=2){
-      firstMB=obs[0][1]; lastMB=obs[obs.length-1][1];
-      days=obs[obs.length-1][0]-obs[0][0];
-      from=dayStr(obs[0][0]); to=dayStr(obs[obs.length-1][0]);
-      const N=obs.length;
-      const sx=obs.reduce((a,o)=>a+o[0],0), sy=obs.reduce((a,o)=>a+o[1],0);
-      const sxy=obs.reduce((a,o)=>a+o[0]*o[1],0), sxx=obs.reduce((a,o)=>a+o[0]*o[0],0);
-      const den=N*sxx-sx*sx;
-      slope=den?(N*sxy-sx*sy)/den:NaN;
-      status=isNaN(slope)?"No readings":((N<20||days<30)?"Low confidence":(slope>0?"Growing":"Shrinking"));
-    }
-    const has=!isNaN(slope), growing=status==="Growing";
+    const t=trendOf(chk?chk.total:[]), m=trendOf(chk?chk.mdf:[]), l=trendOf(chk?chk.ldf:[]);
+    const growing=t.status==="Growing", mGrowing=m.status==="Growing";
     const dbMB=n(c["Replicated Data Size (MB)"]);
     const tNew=s?n(s["Total Tables In DB"]):NaN, rNew=s?n(s["Total Row Count"]):NaN;
     const tOld=n(c["Table Count"]), rOld=n(c["Total Rows"]);
     const same=s&&tNew===tOld&&rNew===rOld;
     const signed=v=>(v>=0?"+":"")+fmtInt(v);
+    const logShare=(m.last!=null&&l.last!=null&&(m.last+l.last)>0)?l.last/(m.last+l.last)*100:"";
     return {
       "Database Name":name,
-      "Checklist Status":status,
-      "Readings":obs.length,
-      "Tracked From":from,
-      "Tracked To":to,
-      "Days Tracked":days,
-      "Size at Start (MB)":isNaN(firstMB)?"":firstMB,
-      "Size at Latest (MB)":isNaN(lastMB)?"":lastMB,
-      "Net Change (MB)":(isNaN(firstMB)||isNaN(lastMB))?"":lastMB-firstMB,
-      "Measured Growth Per Day (MB)":has?slope:"",
-      "Measured Growth Per Month (MB)":has?slope*30:"",
-      "Measured Growth Per Year (MB)":has?slope*365:"",
+      "Checklist Status":t.status,
+      "Readings":t.n,
+      "Tracked From":t.from?dayStr(t.from):"",
+      "Tracked To":t.to?dayStr(t.to):"",
+      "Days Tracked":t.days==null?"":t.days,
+      "Size at Start (MB)":t.first==null?"":t.first,
+      "Size at Latest (MB)":t.last==null?"":t.last,
+      "Net Change (MB)":(t.first==null||t.last==null)?"":t.last-t.first,
+      "Measured Growth Per Day (MB)":isNaN(t.slope)?"":t.slope,
+      "Measured Growth Per Month (MB)":isNaN(t.slope)?"":t.slope*30,
+      "Measured Growth Per Year (MB)":isNaN(t.slope)?"":t.slope*365,
+      "Data File Status":m.status,
+      "Data File Size at Latest (MB)":m.last==null?"":m.last,
+      "Log File Size at Latest (MB)":l.last==null?"":l.last,
+      "Log Share of Size %":logShare,
+      "Growth Without LDF Per Day (MB)":isNaN(m.slope)?"":m.slope,
+      "Growth Without LDF Per Month (MB)":isNaN(m.slope)?"":m.slope*30,
+      "Growth Without LDF Per Year (MB)":isNaN(m.slope)?"":m.slope*365,
       "Replicated Data Size (MB)":isNaN(dbMB)?"":dbMB,
-      "Est. DB Size in 1 Year (MB)":isNaN(dbMB)?"":dbMB+(growing?slope*365:0),
-      "Growth Per Year % of DB":(growing&&dbMB>0)?slope*365/dbMB*100:"",
+      "Est. DB Size in 1 Year (MB)":isNaN(dbMB)?"":dbMB+(growing?t.slope*365:0),
+      "Est. DB Size in 1 Year without LDF (MB)":isNaN(dbMB)?"":dbMB+(mGrowing?m.slope*365:0),
+      "Growth Per Year % of DB":(growing&&dbMB>0)?t.slope*365/dbMB*100:"",
       "Rows Inserted Per Day":s?total(tabs,"insDay"):"",
       "Rows Updated Per Day":s?total(tabs,"updDay"):"",
-      "Tables With Growth Data":tabs.filter(t=>t.ok).length,
+      "Tables With Growth Data":tabs.filter(t2=>t2.ok).length,
       "Total Tables In DB":isNaN(tOld)?"":tOld,
       "Data Check":!s?"Not in growth scan":(same?"Matches":"Differs"),
       "Data Check Detail":!s?"No entry in the all-tables growth scan":
@@ -1287,41 +1297,17 @@ function buildOverviewTiles(){
     .sort((a,b)=>b["Est. Table Growth Per Day (MB)"]-a["Est. Table Growth Per Day (MB)"])[0];
 
   const srv=rowsOf("dbGrowth");
-  const srvG=srv.filter(r=>r["Checklist Status"]==="Growing")
-    .sort((a,b)=>b["Measured Growth Per Day (MB)"]-a["Measured Growth Per Day (MB)"]);
-  const srvShrink=srv.filter(r=>r["Checklist Status"]==="Shrinking");
-  const srvLow=srv.filter(r=>r["Checklist Status"]==="Low confidence");
-  const srvNone=srv.filter(r=>r["Checklist Status"]==="No readings");
+  const srvG=srv.filter(r=>r["Checklist Status"]==="Growing");
+  const srvM=srv.filter(r=>r["Data File Status"]==="Growing");
   const srvDay=sumBy(srvG,"Measured Growth Per Day (MB)");
+  const srvMDay=sumBy(srvM,"Growth Without LDF Per Day (MB)");
   const srvNet=sumBy(srv,"Measured Growth Per Day (MB)");
   const srvCur=sumBy(srv,"Replicated Data Size (MB)");
-  const tracked=srv.map(r=>r["Tracked From"]).filter(Boolean).sort();
+  const srvMdf=sumBy(srv,"Data File Size at Latest (MB)"), srvLdf=sumBy(srv,"Log File Size at Latest (MB)");
+  const trackedFrom=srv.map(r=>r["Tracked From"]).filter(Boolean).sort();
   const trackedTo=srv.map(r=>r["Tracked To"]).filter(Boolean).sort();
-  const period=tracked.length?tracked[0]+" → "+trackedTo[trackedTo.length-1]:"—";
+  const period=trackedFrom.length?trackedFrom[0]+" → "+trackedTo[trackedTo.length-1]:"—";
   const ofSub=b=>'<span class="sub">of '+fmtInt(b)+'</span>';
-  const srvTableHtml=!srv.length
-    ? '<div class="mnote">The DBA checklist data is not loaded, so server growth cannot be shown.</div>'
-    : '<div class="mwrap"><table class="mtable"><thead><tr>'
-    +'<th>Database</th><th class="num">Readings</th><th class="num">Size at Latest</th>'
-    +'<th class="num">Growth / Day</th><th class="num">Growth / Month</th><th class="num">Growth / Year</th>'
-    +'<th class="num">Current Size</th><th class="num">Size in 1 Year</th>'
-    +'</tr></thead><tbody>'
-    +srvG.map(r=>'<tr><td>'+escapeHtml(r["Database Name"])+'</td>'
-      +'<td class="num">'+fmtInt(r["Readings"])+'</td>'
-      +'<td class="num">'+fmtSize(r["Size at Latest (MB)"])+'</td>'
-      +'<td class="num">'+fmtSize(r["Measured Growth Per Day (MB)"])+'</td>'
-      +'<td class="num">'+fmtSize(r["Measured Growth Per Month (MB)"])+'</td>'
-      +'<td class="num">'+fmtSize(r["Measured Growth Per Year (MB)"])+'</td>'
-      +'<td class="num">'+fmtSize(r["Replicated Data Size (MB)"])+'</td>'
-      +'<td class="num">'+fmtSize(r["Est. DB Size in 1 Year (MB)"])+'</td></tr>').join("")
-    +'</tbody><tfoot><tr><td>Server total (growing)</td>'
-    +'<td class="num">'+fmtInt(sumBy(srvG,"Readings"))+'</td>'
-    +'<td class="num">'+fmtSize(sumBy(srvG,"Size at Latest (MB)"))+'</td>'
-    +'<td class="num">'+fmtSize(srvDay)+'</td><td class="num">'+fmtSize(srvDay*30)+'</td><td class="num">'+fmtSize(srvDay*365)+'</td>'
-    +'<td class="num">'+fmtSize(srvCur)+'</td><td class="num">'+fmtSize(srvCur+srvDay*365)+'</td></tr></tfoot></table></div>'
-    +(srvShrink.length?'<div class="mnote">Shrinking over the tracked period (restore, shrink or purge — excluded from the totals): '+escapeHtml(srvShrink.map(r=>r["Database Name"]+" ("+fmtSize(r["Measured Growth Per Day (MB)"])+"/day)").join(", "))+'.</div>':"")
-    +(srvLow.length?'<div class="mnote">Low confidence — too few readings or too short a period to trend: '+escapeHtml(srvLow.map(r=>r["Database Name"]+" ("+fmtInt(r["Readings"])+" readings)").join(", "))+'.</div>':"")
-    +(srvNone.length?'<div class="mnote">No size readings in the checklist: '+escapeHtml(srvNone.map(r=>r["Database Name"]).join(", "))+'. Their current size is included in the server total unchanged.</div>':"");
 
   return [
     {title:"Replication's Storage Details", icon:"💽", grad:TILE_GRADS.storage, items:[
@@ -1383,15 +1369,25 @@ function buildOverviewTiles(){
       {label:"Fastest-Growing Table", value:fastest?escapeHtml(fastest["Table Name"])+'<span class="sub">('+fmtSize(fastest["Est. Table Growth Per Day (MB)"])+'/day)</span>':"—",
         title:fastest?fastest["Database Name"]+" · "+fastest["Table Name"]:""}
     ]},
-    {title:"Daily Growth of Replication Server", icon:"🌐", grad:TILE_GRADS.server, wide:true, bodyHtml:srvTableHtml, items:[
-      {label:"Server Growth per Day", value:fmtSize(srvDay), hero:true, title:"Least-squares trend through the DBA checklist's daily size readings, growing databases only"},
+    {title:"Growth of Replication Server", icon:"🌐", grad:TILE_GRADS.server, items:[
+      {label:"Growth per Day", value:fmtSize(srvDay), hero:true, title:"Trend through the checklist's daily size readings (data + log files), growing databases only"},
       {label:"Growth per Month", value:fmtSize(srvDay*30)},
       {label:"Growth per Year", value:fmtSize(srvDay*365)},
       {label:"Current Server Size", value:fmtSize(srvCur)},
-      {label:"Server Size in 1 Year", value:fmtSize(srvCur+srvDay*365)+share(srvDay*365,srvCur)},
-      {label:"Net Trend per Day", value:fmtSize(srvNet), title:"Every database including shrinking ones, for comparison"},
+      {label:"Size in 1 Year", value:fmtSize(srvCur+srvDay*365)+share(srvDay*365,srvCur)},
       {label:"Databases Growing", value:fmtInt(srvG.length)+ofSub(srv.length)},
+      {label:"Net Trend per Day", value:fmtSize(srvNet), title:"Including shrinking databases, for comparison"},
       {label:"Tracked Period", value:escapeHtml(period), title:"Working-day readings from the DBA Daily Checklist"}
+    ]},
+    {title:"Growth of Replication without LDF", icon:"🗃️", grad:TILE_GRADS.nolog, items:[
+      {label:"Growth per Day", value:fmtSize(srvMDay), hero:true, title:"Data files (MDF) only — transaction log growth excluded"},
+      {label:"Growth per Month", value:fmtSize(srvMDay*30)},
+      {label:"Growth per Year", value:fmtSize(srvMDay*365)},
+      {label:"With LDF per Day", value:fmtSize(srvDay), title:"The figure from the tile alongside, for comparison"},
+      {label:"Data Files Now (MDF)", value:fmtSize(srvMdf)},
+      {label:"Log Files Now (LDF)", value:fmtSize(srvLdf)+share(srvLdf,srvMdf+srvLdf)},
+      {label:"Databases Growing", value:fmtInt(srvM.length)+ofSub(srv.length)},
+      {label:"Tracked Period", value:escapeHtml(period), title:"MDF/LDF split is recorded from 1 June 2026 onward"}
     ]}
   ];
 }
@@ -1401,12 +1397,10 @@ function renderOverviewBlocks(root){
   const tiles=buildOverviewTiles();
   let html='<div style="display:flex;flex-direction:column;gap:12px"><div class="tiles">'
     + tiles.map(t=>
-        '<div class="tile'+(t.wide?" wide":"")+'" style="--tile-grad:'+t.grad+'">'
+        '<div class="tile" style="--tile-grad:'+t.grad+'">'
         + '<div class="tile-head" style="background:'+t.grad+'"><span class="ticon">'+t.icon+'</span>'+escapeHtml(t.title)+'</div>'
         + '<div class="tile-body">'
-        + (t.wide
-            ? '<div class="wstats">'+t.items.map(i=>'<div class="wstat'+(i.hero?" hero":"")+'"'+(i.title?' title="'+escapeHtml(i.title)+'"':'')+'><div class="tl">'+escapeHtml(i.label)+'</div><div class="tv">'+i.value+'</div></div>').join("")+'</div>'+(t.bodyHtml||"")
-            : t.items.map(i=>'<div class="trow'+(i.hero?" hero":"")+'"'+(i.title?' title="'+escapeHtml(i.title)+'"':'')+'><span class="tl">'+escapeHtml(i.label)+'</span><span class="tv">'+i.value+'</span></div>').join(""))
+        + t.items.map(i=>'<div class="trow'+(i.hero?" hero":"")+'"'+(i.title?' title="'+escapeHtml(i.title)+'"':'')+'><span class="tl">'+escapeHtml(i.label)+'</span><span class="tv">'+i.value+'</span></div>').join("")
         + '</div></div>').join("")
     + '</div>';
   html+='<div><div class="groupbar" style="background:'+TILE_GRADS.storage+'">Distribution</div><div class="charts" style="margin-top:7px">'

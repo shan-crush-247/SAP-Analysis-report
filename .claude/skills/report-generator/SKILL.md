@@ -79,9 +79,14 @@ row 0 and **headers on row 2**; `02_Table_Wise_Growth_Detail` has headers on row
 **`DB Size`** sheet of `Core File\DBA Daily Checklist.xlsx` as `{name, sheet, generated,
 dbs:[{name, ip, obs:[[excelSerialDate, sizeMB], …]}]}`. It drives the Replication Server growth
 tile and page, which trend each database's readings by least squares. Notes:
-- That sheet's dates sit in row 3 (Excel serials) with `DB Size` / `Growth Diff Previous day`
-  sub-headers in row 4; size columns are the ones carrying a date. Non-numeric cells
-  (`Sunday`, `Holiday`, `Leave`) are skipped.
+- That sheet's dates sit in row 3 (Excel serials); row 4 says what each column holds. **The
+  layout changes partway through**: May's blocks are a single `DB Size` column per date, but
+  from 1 June (column BK onward) each date is four columns — `MDF`, `LDF`, `Total`,
+  `Growth Diff Previous day` — with the date on the **MDF** column. Read row 4 to decide:
+  `MDF` means the date's total is at `col+2`, otherwise the total is the dated column itself.
+  Taking the dated column blindly silently mixes data-file-only values into the totals (this
+  bug understated log growth once already). Non-numeric cells (`Sunday`, `Holiday`, `Leave`)
+  are skipped.
 - The checklist tracks the **source** databases that feed replication, on their own servers, so
   their sizes differ from the replica's catalogue sizes — don't treat the two as interchangeable.
 - Status rules: Growing / Shrinking / Low confidence (<20 readings or <30 days) / No readings.
