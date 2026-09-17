@@ -96,6 +96,9 @@ button{font-family:inherit}
 .toolbar-left,.toolbar-right{display:flex;gap:7px;flex-wrap:wrap;align-items:center}
 input[type=text],input[type=search],select{border:1px solid var(--line);background:var(--panel);color:var(--ink);border-radius:7px;padding:6.5px 9px;font-size:12.2px}
 #globalSearch{min-width:215px}
+.golive{display:inline-flex;align-items:center;gap:6px;font-size:11.5px;font-weight:700;color:var(--ink2);
+        border:1px solid var(--line);border-radius:7px;padding:3px 8px 3px 10px;background:var(--panel)}
+.golive input{border:none;background:transparent;color:var(--ink);font-size:12px;padding:3px 0;font-weight:700}
 .count-badge{font-size:11.5px;color:var(--ink2);font-weight:700}
 .ddwrap{position:relative}
 .dd-panel{position:absolute;top:calc(100% + 5px);left:0;z-index:60;background:var(--panel);border:1px solid var(--line);border-radius:9px;box-shadow:var(--shadow-lg);padding:9px;min-width:215px;max-height:300px;overflow:auto}
@@ -174,6 +177,8 @@ table.dt tfoot td.num{font-size:12.6px}
         <div class="topbar-sub" id="sectionSub"></div>
       </div>
       <div class="topbar-controls">
+        <label class="golive" title="Growth is current size ÷ time since this date">Go-live
+          <input type="date" id="goLiveInput"></label>
         <button class="btn" id="themeBtn">🌙 Dark</button>
         <button class="btn" id="exportXlsxBtn">⤓ Export Excel</button>
         <button class="btn" id="exportHtmlBtn">⤓ Export HTML</button>
@@ -244,6 +249,35 @@ function replicaSizeMap(){
   ((window.EMBEDDED_REPLICA&&window.EMBEDDED_REPLICA.rows)||[]).forEach(r=>m.set(norm(r.db),r));
   return m;
 }
+
+/* analysis_2.xlsx is one point-in-time snapshot, so there is no earlier reading to diff
+   against. Growth is a straight-line average: everything on disk today accumulated between
+   go-live and the snapshot, so growth per period = current size ÷ periods elapsed. */
+const SNAPSHOT_DATE = "2026-09-17";
+const DEFAULT_GOLIVE = "2016-01-01";
+function goLiveDate(){
+  let v=null;
+  try{ v=localStorage.getItem("sapRepGoLive"); }catch(e){}
+  return (v&&/^\d{4}-\d{2}-\d{2}$/.test(v))?v:DEFAULT_GOLIVE;
+}
+function elapsedPeriods(){
+  const g=new Date(goLiveDate()+"T00:00:00Z"), s=new Date(SNAPSHOT_DATE+"T00:00:00Z");
+  const days=Math.max(1,Math.round((s-g)/86400000));
+  return {days, months:days/30.4375, years:days/365.25};
+}
+
+const LINEAR_GROWTH_NOTE =
+ "Straight-line average. The size workbook is a single snapshot with no earlier reading to compare against, so "
++"everything on disk today is treated as having accumulated evenly between go-live and the snapshot: growth per "
++"period = current size ÷ periods elapsed. Go-live defaults to 1 January 2016 and can be changed in the top bar; the "
++"snapshot is "+SNAPSHOT_DATE+". Months use 30.4375 days and years 365.25. Two caveats: real growth is usually "
++"front-loaded or accelerating, so the recent rate is probably higher than this average for the busy production "
++"databases (BBLIve, ATCLive, AntsProdLive) and lower for old, stable ones; and log size reflects log management "
++"(recovery model, backup frequency, whether the log was ever shrunk) far more than data growth — BBLIve's 935 GB "
++"log and RRFLive's 40 GB log are almost certainly bloat from missed log backups or a long-running transaction "
++"rather than ten years of steady accumulation, which makes the without-LDF figure the better indicator of "
++"underlying data growth. A second snapshot even a few weeks apart (msdb.dbo.backupset records backup_size per "
++"database per date) would let these averages be replaced with measured growth.";
 
 const DB_GROWTH_NOTE =
  "Measured from the DBA Daily Checklist ('DB Size' sheet), which records each database's size in MB on working days. "
@@ -673,6 +707,11 @@ const SHEET_CONFIGS = {
       {key:"Replica Log Size (MB)", type:"size"},
       {key:"Replica Total Size (MB)", type:"size"},
       {key:"Replica Log Share %", type:"pctsmall"},
+      {key:"Linear Growth Per Day (MB)", type:"size"},
+      {key:"Linear Growth Per Month (MB)", type:"size"},
+      {key:"Linear Growth Per Year (MB)", type:"size"},
+      {key:"Linear Growth Without LDF Per Day (MB)", type:"size"},
+      {key:"Linear Growth Without LDF Per Year (MB)", type:"size"},
       {key:"Est. Replica Size in 1 Year (MB)", type:"size"},
       {key:"Est. Replica Data Size in 1 Year (MB)", type:"size"},
       {key:"Growth Per Year % of Replica", type:"pctsmall"},
@@ -689,6 +728,9 @@ const SHEET_CONFIGS = {
       const day=sumBy(grow,"Measured Growth Per Day (MB)"), cur=sumBy(rows,"Replica Total Size (MB)");
       const mDay=sumBy(mGrow,"Growth Without LDF Per Day (MB)"), curData=sumBy(rows,"Replica Data Size (MB)");
       return [
+        {label:"Linear Growth / Day", value:fmtSize(sumBy(rows,"Linear Growth Per Day (MB)"))},
+        {label:"Linear Growth / Year", value:fmtSize(sumBy(rows,"Linear Growth Per Year (MB)"))},
+        {label:"Linear Growth / Day without LDF", value:fmtSize(sumBy(rows,"Linear Growth Without LDF Per Day (MB)"))},
         {label:"Databases Growing", value:fmtInt(grow.length)+" of "+fmtInt(rows.length)},
         {label:"Growth / Day", value:fmtSize(day)},
         {label:"Growth / Year", value:fmtSize(day*365)},
@@ -1029,6 +1071,7 @@ function buildDbGrowth(){
   (STATE.growthTables||[]).forEach(t=>{ if(!byDb.has(t.dbKey)) byDb.set(t.dbKey,[]); byDb.get(t.dbKey).push(t); });
   const total=(list,f)=>list.reduce((a,t)=>a+t[f],0);
   const repMap=replicaSizeMap();
+  const per=elapsedPeriods();
   const dayStr=serial=>new Date(Math.round((serial-25569)*86400000)).toISOString().slice(0,10);
   return (STATE.data.databases?STATE.data.databases.rows:[]).map(c=>{
     const name=String(c["Database Name"]).trim(), key=name.toUpperCase();
@@ -1067,6 +1110,11 @@ function buildDbGrowth(){
       "Replica Log Size (MB)":isNaN(repLog)?"":repLog,
       "Replica Total Size (MB)":isNaN(repTotal)?"":repTotal,
       "Replica Log Share %":(repTotal>0)?repLog/repTotal*100:"",
+      "Linear Growth Per Day (MB)":isNaN(repTotal)?"":repTotal/per.days,
+      "Linear Growth Per Month (MB)":isNaN(repTotal)?"":repTotal/per.months,
+      "Linear Growth Per Year (MB)":isNaN(repTotal)?"":repTotal/per.years,
+      "Linear Growth Without LDF Per Day (MB)":isNaN(repData)?"":repData/per.days,
+      "Linear Growth Without LDF Per Year (MB)":isNaN(repData)?"":repData/per.years,
       "Est. Replica Size in 1 Year (MB)":isNaN(repTotal)?"":repTotal+(growing?t.slope*365:0),
       "Est. Replica Data Size in 1 Year (MB)":isNaN(repData)?"":repData+(mGrowing?m.slope*365:0),
       "Growth Per Year % of Replica":(growing&&repTotal>0)?t.slope*365/repTotal*100:"",
@@ -1108,7 +1156,7 @@ function finalizeData(fileName,generated){
   STATE.data.dailyGrowth={rows:buildDailyGrowth(),note:DAILY_GROWTH_NOTE};
   STATE.growthTables=buildGrowthTables();
   STATE.data.dbGrowth={rows:buildDbGrowth(),
-    note:STATE.growth ? DB_GROWTH_NOTE+" Source workbook ("+STATE.growth.name+") note: "+STATE.growth.note
+    note:STATE.growth ? LINEAR_GROWTH_NOTE+" — Checklist-measured columns: "+DB_GROWTH_NOTE+" Source workbook ("+STATE.growth.name+") note: "+STATE.growth.note
                       : "The all-tables growth workbook (lib/growth-data.js) is not loaded, so replication server growth cannot be shown."};
   Object.keys(SHEET_CONFIGS).forEach(id=>{ if(!STATE.sections[id]) STATE.sections[id]=freshSectionState(id); });
   const canonical=(STATE.data.databases?STATE.data.databases.rows:[]).map(r=>String(r["Database Name"]||"").trim()).filter(Boolean);
@@ -1362,7 +1410,6 @@ function buildOverviewTiles(){
   const totRows=sumBy(db,"Total Rows");
   const repMB=sumBy(db,"Replicated Data Size (MB)"), dataMB=sumBy(db,"Data Size (MB)"), idxMB=sumBy(db,"Index Size (MB)");
   const unusedMB=sumBy(un,"TotalSizeMB");
-  const dgMB=sumBy(dg,"Est. Total Size Per Day (MB)");
   const spSap=sp.filter(r=>String(r.UsesSAP).toUpperCase()==="YES").length;
 
   /* Rows per usage bucket come from the per-table catalogue so both sides are on the
@@ -1385,13 +1432,10 @@ function buildOverviewTiles(){
   const repBigLog=repRows.slice().sort((a,b)=>b.log-a.log)[0]||null;
   const srvScale=dataMB>0?repDataMB/dataMB:1;
 
-  const srv=rowsOf("dbGrowth");
-  const srvG=srv.filter(r=>r["Checklist Status"]==="Growing");
-  const srvMg=srv.filter(r=>r["Data File Status"]==="Growing");
-  const srvDay=sumBy(srvG,"Measured Growth Per Day (MB)");
-  const srvMDay=sumBy(srvMg,"Growth Without LDF Per Day (MB)");
-  const srvNet=sumBy(srv,"Measured Growth Per Day (MB)");
-  const ofSub=b=>'<span class="sub">of '+fmtInt(b)+'</span>';
+  const per=elapsedPeriods();
+  const biUsedRows=(STATE.data.tables?STATE.data.tables.rows:[]).filter(r=>String(r["BI Used?"]).trim().toLowerCase()==="yes");
+  const biUsedMB=sumBy(biUsedRows,"Total Size (MB)");
+  const sinceSub='<span class="sub">since '+escapeHtml(goLiveDate())+'</span>';
 
 
   return [
@@ -1440,11 +1484,13 @@ function buildOverviewTiles(){
       {label:"Avg Rows per Table", value:fmtScale(avgRows), title:fmtInt(avgRows)+" rows"}
     ]},
     {title:"Daily Growth of BI Reports", icon:"🧮", grad:TILE_GRADS.growth, items:[
-      {label:"Data Written per Day", value:fmtSize(dgMB), hero:true},
-      {label:"Cells Written per Day", value:fmtInt(sumBy(dg,"Cells Inserted Per Day"))},
-      {label:"Projected / 30 Days", value:fmtSize(dgMB*30)},
-      {label:"Projected / Year", value:fmtSize(dgMB*365)},
-      {label:"Tables Covered", value:fmtInt(dg.length)}
+      {label:"Growth per Day", value:fmtSize(biUsedMB/per.days), hero:true, title:"BI-used table size ÷ days since go-live"},
+      {label:"Growth per Month", value:fmtSize(biUsedMB/per.months)},
+      {label:"Growth per Year", value:fmtSize(biUsedMB/per.years)},
+      {label:"BI-Used Tables Size", value:fmtSize(biUsedMB)},
+      {label:"Share of Replica", value:fmtPct(repTotalMB>0?biUsedMB/repTotalMB*100:0)},
+      {label:"Tables Used in BI", value:fmtInt(biUsedRows.length)},
+      {label:"Days Elapsed", value:fmtInt(per.days)+sinceSub}
     ]},
     {title:"Table Storage of BI Reports", icon:"📦", grad:TILE_GRADS.tstore, items:[
       {label:"Table Growth per Day", value:fmtSize(growDay), hero:true, title:"Σ column count × rows inserted per day × avg cell size"},
@@ -1455,22 +1501,22 @@ function buildOverviewTiles(){
       {label:"Est. Size in 1 Year", value:fmtSize(curCovered+growDay*365)+share(growDay*365,curCovered)}
     ]},
     {title:"Growth of Replication Server", icon:"🌐", grad:TILE_GRADS.server, items:[
-      {label:"Growth per Day", value:fmtSize(srvDay), hero:true, title:"Trend through the checklist's daily size readings (data + log), growing databases only"},
-      {label:"Growth per Month", value:fmtSize(srvDay*30)},
-      {label:"Growth per Year", value:fmtSize(srvDay*365)},
+      {label:"Growth per Day", value:fmtSize(repTotalMB/per.days), hero:true, title:"Replica size (data + log) ÷ days since go-live"},
+      {label:"Growth per Month", value:fmtSize(repTotalMB/per.months)},
+      {label:"Growth per Year", value:fmtSize(repTotalMB/per.years)},
       {label:"Replica Size Now", value:fmtSize(repTotalMB), title:"From analysis_2.xlsx"},
-      {label:"Size in 1 Year", value:fmtSize(repTotalMB+srvDay*365)+share(srvDay*365,repTotalMB)},
-      {label:"Databases Growing", value:fmtInt(srvG.length)+ofSub(srv.length)},
-      {label:"Net Trend per Day", value:fmtSize(srvNet), title:"Including shrinking databases"}
+      {label:"Size in 1 Year", value:fmtSize(repTotalMB+repTotalMB/per.years)+share(repTotalMB/per.years,repTotalMB)},
+      {label:"Days Elapsed", value:fmtInt(per.days)+sinceSub},
+      {label:"Years Elapsed", value:fmtNum1(per.years)}
     ]},
     {title:"Growth of Replication server without LDF", icon:"🗃️", grad:TILE_GRADS.nolog, items:[
-      {label:"Growth per Day", value:fmtSize(srvMDay), hero:true, title:"Data files (MDF) only — transaction log growth excluded"},
-      {label:"Growth per Month", value:fmtSize(srvMDay*30)},
-      {label:"Growth per Year", value:fmtSize(srvMDay*365)},
+      {label:"Growth per Day", value:fmtSize(repDataMB/per.days), hero:true, title:"Data files (MDF) ÷ days since go-live — log growth excluded"},
+      {label:"Growth per Month", value:fmtSize(repDataMB/per.months)},
+      {label:"Growth per Year", value:fmtSize(repDataMB/per.years)},
       {label:"Data Files Now (MDF)", value:fmtSize(repDataMB), title:"From analysis_2.xlsx"},
-      {label:"Data Size in 1 Year", value:fmtSize(repDataMB+srvMDay*365)+share(srvMDay*365,repDataMB)},
+      {label:"Data Size in 1 Year", value:fmtSize(repDataMB+repDataMB/per.years)+share(repDataMB/per.years,repDataMB)},
       {label:"Log Files Now (LDF)", value:fmtSize(repLogMB)+share(repLogMB,repTotalMB)},
-      {label:"Log Share of Growth", value:srvDay>0?fmtPct(Math.max(0,srvDay-srvMDay)/srvDay*100):"—", title:"How much of the daily growth is transaction log"}
+      {label:"Log Growth per Day", value:fmtSize(repLogMB/per.days), title:"Log size ÷ days — log size reflects log management more than data growth"}
     ]}
   ];
 }
@@ -1859,6 +1905,16 @@ async function refreshAll(){
   finally{ btn.disabled=false; btn.textContent=old; }
 }
 
+(function(){
+  const gi=document.getElementById("goLiveInput");
+  gi.value=goLiveDate();
+  gi.max=SNAPSHOT_DATE;
+  gi.addEventListener("change",()=>{
+    if(!/^\d{4}-\d{2}-\d{2}$/.test(gi.value)||gi.value>=SNAPSHOT_DATE){ gi.value=goLiveDate(); return; }
+    try{ localStorage.setItem("sapRepGoLive",gi.value); }catch(e){}
+    if(STATE.loaded){ STATE.data.dbGrowth={rows:buildDbGrowth(),note:STATE.data.dbGrowth.note}; navigate(STATE.current); }
+  });
+})();
 document.getElementById("refreshBtn").addEventListener("click",refreshAll);
 window.addEventListener("resize",()=>{ if(STATE.loaded) applyFreezeOffsets(tableSectionOf(STATE.current)); });
 document.getElementById("exportXlsxBtn").addEventListener("click",exportExcel);
