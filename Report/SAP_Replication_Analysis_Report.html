@@ -99,6 +99,7 @@ input[type=text],input[type=search],select{border:1px solid var(--line);backgrou
 .golive{display:inline-flex;align-items:center;gap:6px;font-size:11.5px;font-weight:700;color:var(--ink2);
         border:1px solid var(--line);border-radius:7px;padding:3px 8px 3px 10px;background:var(--panel)}
 .golive input{border:none;background:transparent;color:var(--ink);font-size:12px;padding:3px 0;font-weight:700}
+.golive #goLiveDays{font-size:11px;color:var(--ink2);font-weight:700;white-space:nowrap}
 .count-badge{font-size:11.5px;color:var(--ink2);font-weight:700}
 .ddwrap{position:relative}
 .dd-panel{position:absolute;top:calc(100% + 5px);left:0;z-index:60;background:var(--panel);border:1px solid var(--line);border-radius:9px;box-shadow:var(--shadow-lg);padding:9px;min-width:215px;max-height:300px;overflow:auto}
@@ -178,7 +179,7 @@ table.dt tfoot td.num{font-size:12.6px}
       </div>
       <div class="topbar-controls">
         <label class="golive" title="Growth is current size ÷ time since this date">Go-live
-          <input type="date" id="goLiveInput"></label>
+          <input type="date" id="goLiveInput"><span id="goLiveDays"></span></label>
         <button class="btn" id="themeBtn">🌙 Dark</button>
         <button class="btn" id="exportXlsxBtn">⤓ Export Excel</button>
         <button class="btn" id="exportHtmlBtn">⤓ Export HTML</button>
@@ -240,10 +241,22 @@ function replicaSizeMap(){
    go-live and the snapshot, so growth per period = current size ÷ periods elapsed. */
 const SNAPSHOT_DATE = "2026-09-17";
 const DEFAULT_GOLIVE = "2016-01-01";
+/* A go-live within days of the snapshot divides the whole estate by almost nothing and
+   reports the entire 7 TB as "per day", so anything under this span is treated as bad
+   stored state and discarded rather than shown. */
+const MIN_SPAN_DAYS = 30;
+function daysBetweenGoLive(v){
+  return Math.round((new Date(SNAPSHOT_DATE+"T00:00:00Z")-new Date(v+"T00:00:00Z"))/86400000);
+}
+function validGoLive(v){
+  return !!v && /^\d{4}-\d{2}-\d{2}$/.test(v) && !isNaN(new Date(v+"T00:00:00Z")) && daysBetweenGoLive(v)>=MIN_SPAN_DAYS;
+}
 function goLiveDate(){
   let v=null;
   try{ v=localStorage.getItem("sapRepGoLive"); }catch(e){}
-  return (v&&/^\d{4}-\d{2}-\d{2}$/.test(v))?v:DEFAULT_GOLIVE;
+  if(validGoLive(v)) return v;
+  if(v){ try{ localStorage.removeItem("sapRepGoLive"); }catch(e){} }
+  return DEFAULT_GOLIVE;
 }
 function elapsedPeriods(){
   const g=new Date(goLiveDate()+"T00:00:00Z"), s=new Date(SNAPSHOT_DATE+"T00:00:00Z");
@@ -1791,17 +1804,23 @@ async function refreshAll(){
   finally{ btn.disabled=false; btn.textContent=old; }
 }
 
+function updateGoLiveDays(){
+  const el=document.getElementById("goLiveDays");
+  if(el) el.textContent="· "+fmtInt(elapsedPeriods().days)+" days";
+}
 (function(){
   const gi=document.getElementById("goLiveInput");
   gi.value=goLiveDate();
   gi.max=SNAPSHOT_DATE;
+  updateGoLiveDays();
   gi.addEventListener("change",()=>{
-    if(!/^\d{4}-\d{2}-\d{2}$/.test(gi.value)||gi.value>=SNAPSHOT_DATE){ gi.value=goLiveDate(); return; }
+    if(!validGoLive(gi.value)){ gi.value=goLiveDate(); updateGoLiveDays(); return; }
     try{ localStorage.setItem("sapRepGoLive",gi.value); }catch(e){}
     if(STATE.loaded){
       applyLinearGrowth();
       STATE.data.dailyGrowth={rows:buildDailyGrowth(),note:STATE.data.dailyGrowth.note};
       STATE.data.dbGrowth={rows:buildDbGrowth(),note:STATE.data.dbGrowth.note};
+      updateGoLiveDays();
       navigate(STATE.current);
     }
   });
