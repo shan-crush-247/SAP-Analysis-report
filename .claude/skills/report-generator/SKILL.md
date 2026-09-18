@@ -76,9 +76,12 @@ row 0 and **headers on row 2**; `02_Table_Wise_Growth_Detail` has headers on row
 ### Growth method (applies to every screen)
 
 Growth anywhere in the report is a **straight-line average**: `current size ÷ periods elapsed`,
-where the period runs from go-live (default 1 Jan 2016, editable in the top bar and stored in
-`localStorage`) to the snapshot date (`SNAPSHOT_DATE`, 2026-09-17) — 3,912 days, 128.53 months
-(30.4375 days each), 10.71 years (365.25 days). `applyLinearGrowth()` writes the per-day and
+where the period runs from go-live (`DEFAULT_GOLIVE`, 2016-01-01) to the snapshot date
+(`SNAPSHOT_DATE`, 2026-09-17) — 3,912 days, 128.53 months
+(30.4375 days each), 10.71 years (365.25 days). Both dates are fixed in source: a per-browser
+override in `localStorage` was removed after a date near the snapshot divided the estate by
+almost nothing and reported the whole 7 TB as growth "per day" in one browser but not another.
+`applyLinearGrowth()` writes the per-day and
 per-year columns onto the databases, tables, unused and insights rows, and must be re-run (never
 re-applied cumulatively) whenever the go-live date changes; `applyReplicaScaling()` by contrast
 multiplies sizes in place and must run exactly once per load. Don't reintroduce a second method

@@ -48,8 +48,8 @@ each numeric column across all filtered rows. Column headings match the workbook
 totals included — the HTML export embeds the charts as images so it stands alone.
 
 Growth everywhere is a **straight-line average**, not a measurement: the size workbook is a
-single snapshot, so growth per period = current size ÷ time since go-live (1 Jan 2016 by
-default, editable in the top bar; snapshot 17 Sep 2026 — 3,912 days). Real growth is usually
+single snapshot, so growth per period = current size ÷ time since go-live (1 Jan 2016 to the
+17 Sep 2026 snapshot — 3,912 days; both set in the report source). Real growth is usually
 front-loaded or accelerating, so the recent rate is likely higher than this average for busy
 databases and lower for stable ones, and log size reflects log management rather than data
 volume — which makes the without-LDF figures the better indicator. The Methodology panel on

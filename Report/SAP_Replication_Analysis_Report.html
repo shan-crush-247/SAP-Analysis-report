@@ -96,10 +96,6 @@ button{font-family:inherit}
 .toolbar-left,.toolbar-right{display:flex;gap:7px;flex-wrap:wrap;align-items:center}
 input[type=text],input[type=search],select{border:1px solid var(--line);background:var(--panel);color:var(--ink);border-radius:7px;padding:6.5px 9px;font-size:12.2px}
 #globalSearch{min-width:215px}
-.golive{display:inline-flex;align-items:center;gap:6px;font-size:11.5px;font-weight:700;color:var(--ink2);
-        border:1px solid var(--line);border-radius:7px;padding:3px 8px 3px 10px;background:var(--panel)}
-.golive input{border:none;background:transparent;color:var(--ink);font-size:12px;padding:3px 0;font-weight:700}
-.golive #goLiveDays{font-size:11px;color:var(--ink2);font-weight:700;white-space:nowrap}
 .count-badge{font-size:11.5px;color:var(--ink2);font-weight:700}
 .ddwrap{position:relative}
 .dd-panel{position:absolute;top:calc(100% + 5px);left:0;z-index:60;background:var(--panel);border:1px solid var(--line);border-radius:9px;box-shadow:var(--shadow-lg);padding:9px;min-width:215px;max-height:300px;overflow:auto}
@@ -178,8 +174,6 @@ table.dt tfoot td.num{font-size:12.6px}
         <div class="topbar-sub" id="sectionSub"></div>
       </div>
       <div class="topbar-controls">
-        <label class="golive" title="Growth is current size ÷ time since this date">Go-live
-          <input type="date" id="goLiveInput"><span id="goLiveDays"></span></label>
         <button class="btn" id="themeBtn">🌙 Dark</button>
         <button class="btn" id="exportXlsxBtn">⤓ Export Excel</button>
         <button class="btn" id="exportHtmlBtn">⤓ Export HTML</button>
@@ -241,23 +235,10 @@ function replicaSizeMap(){
    go-live and the snapshot, so growth per period = current size ÷ periods elapsed. */
 const SNAPSHOT_DATE = "2026-09-17";
 const DEFAULT_GOLIVE = "2016-01-01";
-/* A go-live within days of the snapshot divides the whole estate by almost nothing and
-   reports the entire 7 TB as "per day", so anything under this span is treated as bad
-   stored state and discarded rather than shown. */
-const MIN_SPAN_DAYS = 30;
-function daysBetweenGoLive(v){
-  return Math.round((new Date(SNAPSHOT_DATE+"T00:00:00Z")-new Date(v+"T00:00:00Z"))/86400000);
-}
-function validGoLive(v){
-  return !!v && /^\d{4}-\d{2}-\d{2}$/.test(v) && !isNaN(new Date(v+"T00:00:00Z")) && daysBetweenGoLive(v)>=MIN_SPAN_DAYS;
-}
-function goLiveDate(){
-  let v=null;
-  try{ v=localStorage.getItem("sapRepGoLive"); }catch(e){}
-  if(validGoLive(v)) return v;
-  if(v){ try{ localStorage.removeItem("sapRepGoLive"); }catch(e){} }
-  return DEFAULT_GOLIVE;
-}
+/* Fixed in the source: a per-browser override used to be editable in the top bar, but a
+   date near the snapshot divided the whole estate by almost nothing and reported the entire
+   7 TB as growth "per day", which differed between browsers. */
+function goLiveDate(){ return DEFAULT_GOLIVE; }
 function elapsedPeriods(){
   const g=new Date(goLiveDate()+"T00:00:00Z"), s=new Date(SNAPSHOT_DATE+"T00:00:00Z");
   const days=Math.max(1,Math.round((s-g)/86400000));
@@ -267,8 +248,8 @@ function elapsedPeriods(){
 const LINEAR_GROWTH_NOTE =
  "Straight-line average. The size workbook is a single snapshot with no earlier reading to compare against, so "
 +"everything on disk today is treated as having accumulated evenly between go-live and the snapshot: growth per "
-+"period = current size ÷ periods elapsed. Go-live defaults to 1 January 2016 and can be changed in the top bar; the "
-+"snapshot is "+SNAPSHOT_DATE+". Months use 30.4375 days and years 365.25. Two caveats: real growth is usually "
++"period = current size ÷ periods elapsed. Go-live is 1 January 2016 and the snapshot is "+SNAPSHOT_DATE+", giving "
++"3,912 days. Months use 30.4375 days and years 365.25. Two caveats: real growth is usually "
 +"front-loaded or accelerating, so the recent rate is probably higher than this average for the busy production "
 +"databases (BBLIve, ATCLive, AntsProdLive) and lower for old, stable ones; and log size reflects log management "
 +"(recovery model, backup frequency, whether the log was ever shrunk) far more than data growth — BBLIve's 935 GB "
@@ -1804,27 +1785,6 @@ async function refreshAll(){
   finally{ btn.disabled=false; btn.textContent=old; }
 }
 
-function updateGoLiveDays(){
-  const el=document.getElementById("goLiveDays");
-  if(el) el.textContent="· "+fmtInt(elapsedPeriods().days)+" days";
-}
-(function(){
-  const gi=document.getElementById("goLiveInput");
-  gi.value=goLiveDate();
-  gi.max=SNAPSHOT_DATE;
-  updateGoLiveDays();
-  gi.addEventListener("change",()=>{
-    if(!validGoLive(gi.value)){ gi.value=goLiveDate(); updateGoLiveDays(); return; }
-    try{ localStorage.setItem("sapRepGoLive",gi.value); }catch(e){}
-    if(STATE.loaded){
-      applyLinearGrowth();
-      STATE.data.dailyGrowth={rows:buildDailyGrowth(),note:STATE.data.dailyGrowth.note};
-      STATE.data.dbGrowth={rows:buildDbGrowth(),note:STATE.data.dbGrowth.note};
-      updateGoLiveDays();
-      navigate(STATE.current);
-    }
-  });
-})();
 document.getElementById("refreshBtn").addEventListener("click",refreshAll);
 window.addEventListener("resize",()=>{ if(STATE.loaded) applyFreezeOffsets(tableSectionOf(STATE.current)); });
 document.getElementById("exportXlsxBtn").addEventListener("click",exportExcel);
